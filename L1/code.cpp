@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <conio.h>
+#include <time.h>
 #include <iostream>
 
 using namespace std;
@@ -15,6 +16,18 @@ public:
 	{
 		t = 1;
 		a[0] = 0;
+	}
+	void gen()
+	{
+		t = 1;
+		int r = 0;
+		for (int i = 0; i < 26; i++)
+		if (rand() % 2 == 0)
+		{
+			a[r] = 'a' + i;
+			r++;
+		}
+		a[r] = 0;
 	}
 	void init(char *_s)
 	{
@@ -158,10 +171,45 @@ private:
 	SP_EL *spis;
 public:
 
+
+	~DATA2()
+	{
+		SP_EL *p = spis;
+		while (p)
+		{
+			SP_EL *p1 = p;
+			p = p->n;
+			delete p1;
+		}
+	}
+
 	DATA2()
 	{
 		t = 1;
 		spis = 0;
+	}
+	void gen()
+	{
+		t = 1;
+
+		SP_EL *p = spis;
+		while (p)
+		{
+			SP_EL *p1 = p;
+			p = p->n;
+			delete p1;
+		}
+
+		spis = NULL;
+
+		for (int i = 0; i < 26; i++)
+		if(rand()%2==0)
+		{
+			SP_EL *p = new SP_EL;
+			p->ch = 'a' + i;
+			p->n = spis;
+			spis = p;
+		}
 	}
 	void init(char *_s)
 	{
@@ -169,6 +217,8 @@ public:
 
 		int ais[26];
 		SP_EL *p;
+
+		spis = NULL;
 
 		for (int i = 0; i < 26; i++)
 			ais[i] = 0;
@@ -178,6 +228,7 @@ public:
 			if (*_s >= 'a' && *_s <= 'z')
 				if (ais[*_s - 'a'] == 0)
 				{
+					ais[*_s - 'a'] = 1;
 					p = new SP_EL;
 					p->n = spis;
 					spis = p;
@@ -208,6 +259,16 @@ public:
 	{
 		t = _a.t;
 		SP_EL *p;
+
+		p = spis;
+		while (p)
+		{
+			SP_EL *p1 = p;
+			p = p->n;
+			delete p1;
+		}
+
+		spis = NULL;
 
 		for (SP_EL *el = _a.spis; el; el = el->n)
 		{
@@ -317,6 +378,13 @@ public:
 		for (int i = 0; i < 26; i++)
 			a[i] = 0;
 	}
+	void gen()
+	{
+		t = 1;
+
+		for (int i = 0; i < 26; i++)
+			a[i] = rand() % 2;
+	}
 	void init(char *_s)
 	{
 		t = 1;
@@ -381,7 +449,7 @@ public:
 	{
 		DATA3 c;
 
-		for (int i = 0; i < 26;i++)
+		for (int i = 0; i < 26; i++)
 		{
 			c.a[i] = _a.a[i] & _b.a[i];
 		}
@@ -413,38 +481,332 @@ public:
 
 };
 
+class DATA4 //сжатый юниверсум
+{
+private:
+	int t;
+	long a;
+public:
+
+	DATA4()
+	{
+		t = 1;
+		a = 0;
+	}
+	void gen()
+	{
+		t = 1;
+
+		a = 0;
+
+		for (int i = 0; i < 26; i++)
+			a |= (rand() % 2)<<i;
+	}
+	void init(char *_s)
+	{
+		t = 1;
+		a = 0;
+		
+
+		while (*_s)
+		{
+			if (*_s >= 'a' && *_s <= 'z')
+			{
+				a |= 1<<(*_s - 'a');
+			}
+			_s++;
+		}
+	}
+	DATA4(char *_s)
+	{
+		init(_s);
+	}
+	void put()
+	{
+		if (t == 0)
+		{
+			cout << "Нет данных\n";
+		}
+
+		bool b = 0;
+
+		for (int i = 0; i < 26; i++)
+			if (a & (1<<i))
+			{
+				b = 1;
+				cout << (char)(i + 'a');
+			}
+
+		if (b == 0)
+		{
+			cout << "Пустое множество\n";
+		}
+		else
+			cout << "\n";
+	}
+
+	const DATA4& operator= (const DATA4 &_a)
+	{
+		t = _a.t;
+		a = _a.a;
+
+		return *this;
+	}
+	DATA4(const DATA4 &_a)
+	{
+		t = _a.t;
+		a = _a.a;
+	}
+	friend DATA4 operator & (const DATA4 &_a, const DATA4 &_b)
+	{
+		DATA4 c;
+
+		c.a = _a.a & _b.a;
+
+		return c;
+	}
+	friend DATA4 operator | (const DATA4 &_a, const DATA4 &_b)
+	{
+		DATA4 c;
+
+		c.a = _a.a | _b.a;
+
+		return c;
+	}
+	friend DATA4 operator ~ (const DATA4 &_a)
+	{
+		DATA4 c;
+
+		c.a = ~_a.a;
+
+		return c;
+	}
+
+};
+
 
 DATA1 processing(DATA1 _a, DATA1 _b, DATA1 _c, DATA1 _d);
 DATA2 processing(DATA2 _a, DATA2 _b, DATA2 _c, DATA2 _d);
 DATA3 processing(DATA3 _a, DATA3 _b, DATA3 _c, DATA3 _d);
-//DATA4 processing(DATA4 _a, DATA4 _b, DATA4 _c, DATA4 _d);
+DATA4 processing(DATA4 _a, DATA4 _b, DATA4 _c, DATA4 _d);
 
 int main()
 {
-	setlocale(0,"RU");
+	setlocale(0, "RU");
 	//cout <<  "Главное меню";
 
-	DATA3 a,b,c,d,e;
+	int exit = 0;
 
-	a.init("abcde");
-	b.init(" cdefg");
-	c.init("bczw");
-	d.init("zfq");
+	while(!exit){
+		DATA4 a, b, c, d, e;
 
-	a.put();
-	b.put();
-	c.put();
-	d.put();
+		char s_a[30], s_b[30], s_c[30], s_d[30];
 
-	(~c).put();
-	(a&b).put();
-	((a & b) & (~c)).put();
-	e = (a & b) & (~c) | d;
+		int i;
 
-	e.put();
+		/** /
+		cout << "Вводите A:";
+		gets_s(s_a, 30);
+		cout << "Вводите B:";
+		gets_s(s_b, 30);
+		cout << "Вводите C:";
+		gets_s(s_c, 30);
+		cout << "Вводите D:";
+		gets_s(s_d, 30);
 
+		cout << "Массив:";
+		processing(DATA1(s_a), DATA1(s_b), DATA1(s_c), DATA1(s_d)).put();
+
+		cout << "Список:";
+		processing(DATA2(s_a), DATA2(s_b), DATA2(s_c), DATA2(s_d)).put();
+
+		cout << "Юниверсум:";
+		processing(DATA3(s_a), DATA3(s_b), DATA3(s_c), DATA3(s_d)).put();
+
+		cout << "Машинное слово:";
+		processing(DATA4(s_a), DATA4(s_b), DATA4(s_c), DATA4(s_d)).put();
+		/**/
+		system("cls");
+
+		cout << "Введите 1 или 2 или 3 или 4   5-выход:\n";
+
+
+		scanf("%i", &i);
+		if (i == 5)
+			exit = 1;
+		switch (i)
+		{
+		case 1:
+		{
+			DATA1 a;
+			DATA1 b;
+			DATA1 c;
+			DATA1 d;
+			DATA1 e;
+
+			a.gen();
+			b.gen();
+			c.gen();
+			d.gen();
+
+			cout << "A:";
+			a.put();
+			cout << "B:";
+			b.put();
+			cout << "C:";
+			c.put();
+			cout << "D:";
+			d.put();
+			cout << "E:";
+			e = processing(a, b, c, d);
+			e.put();
+
+			auto c2 = clock();
+			auto c1 = clock();
+
+			for (i = 0; i < 100000; i++)
+				e = processing(a, b, c, d);
+
+			c2 = clock();
+
+			cout << "E:";
+			e.put();
+			cout << "Тактов:" << c2 - c1 << "\n";
+			cout << "Тактов на 1 запуск::" << (c2 - c1) / (float)100000;
+
+			system("pause");
+		}
+		break;
+		case 2:
+		{
+			DATA2 a;
+			DATA2 b;
+			DATA2 c;
+			DATA2 d;
+			DATA2 e;
+
+			a.gen();
+			b.gen();
+			c.gen();
+			d.gen();
+
+			cout << "A:";
+			a.put();
+			cout << "B:";
+			b.put();
+			cout << "C:";
+			c.put();
+			cout << "D:";
+			d.put();
+			cout << "E:";
+			e = processing(a, b, c, d);
+			e.put();
+
+			auto c2 = clock();
+			auto c1 = clock();
+
+			for (i = 0; i < 10000; i++)
+			{
+				e = processing(a, b, c, d);
+			}
+
+			c2 = clock();
+
+			cout << "E:";
+			e.put();
+			cout << "Тактов:" << c2 - c1 << "\n";
+			cout << "Тактов на 1 запуск::" << (c2 - c1) / (float)10000;
+
+			system("pause");
+		}
+		break;
+		case 3:
+		{
+			DATA3 a;
+			DATA3 b;
+			DATA3 c;
+			DATA3 d;
+			DATA3 e;
+
+			a.gen();
+			b.gen();
+			c.gen();
+			d.gen();
+
+			cout << "A:";
+			a.put();
+			cout << "B:";
+			b.put();
+			cout << "C:";
+			c.put();
+			cout << "D:";
+			d.put();
+			cout << "E:";
+			e = processing(a, b, c, d);
+			e.put();
+
+			auto c2 = clock();
+			auto c1 = clock();
+
+			for (i = 0; i < 100000; i++)
+				e = processing(a, b, c, d);
+
+			c2 = clock();
+
+			cout << "E:";
+			e.put();
+			cout << "Тактов:" << c2 - c1 << "\n";
+			cout << "Тактов на 1 запуск::" << (c2 - c1) / (float)100000;
+
+			system("pause");
+		}
+		break;
+		case 4:
+		{
+			DATA4 a;
+			DATA4 b;
+			DATA4 c;
+			DATA4 d;
+			DATA4 e;
+
+			a.gen();
+			b.gen();
+			c.gen();
+			d.gen();
+
+			cout << "A:";
+			a.put();
+			cout << "B:";
+			b.put();
+			cout << "C:";
+			c.put();
+			cout << "D:";
+			d.put();
+			cout << "E:";
+			e = processing(a, b, c, d);
+			e.put();
+
+			auto c2 = clock();
+			auto c1 = clock();
+
+			for (i = 0; i < 100000; i++)
+				e = processing(a, b, c, d);
+
+			c2 = clock();
+
+			cout << "E:";
+			e.put();
+			cout << "Тактов:" << c2 - c1 << "\n";
+			cout << "Тактов на 1 запуск::" << (c2 - c1) / (float)100000;
+
+			system("pause");
+		}
+		break;
+		}
+
+
+	}
 	
-	Sleep(20342);
 }
 
 DATA1 processing(DATA1 _a, DATA1 _b, DATA1 _c, DATA1 _d)
@@ -459,10 +821,9 @@ DATA3 processing(DATA3 _a, DATA3 _b, DATA3 _c, DATA3 _d)
 {
 	return (_a & _b) & (~_c) | _d;
 }
-/*
 DATA4 processing(DATA4 _a, DATA4 _b, DATA4 _c, DATA4 _d)
 {
 	return (_a & _b) & (~_c) | _d;
 }
-*/
+
 
