@@ -203,13 +203,13 @@ public:
 		spis = NULL;
 
 		for (int i = 0; i < 26; i++)
-		if(rand()%2==0)
-		{
-			SP_EL *p = new SP_EL;
-			p->ch = 'a' + i;
-			p->n = spis;
-			spis = p;
-		}
+			if (rand() % 2 == 0)
+			{
+				SP_EL *p = new SP_EL;
+				p->ch = 'a' + i;
+				p->n = spis;
+				spis = p;
+			}
 	}
 	void init(char *_s)
 	{
@@ -672,7 +672,7 @@ int main()
 			cout << "E:";
 			e.put();
 			cout << "Тактов:" << c2 - c1 << "\n";
-			cout << "Тактов на 1 запуск::" << (c2 - c1) / (float)100000;
+			cout << "Тактов на 1 запуск::" << (c2 - c1) / (float)100000 << "\n";
 
 			system("pause");
 		}
@@ -715,7 +715,7 @@ int main()
 			cout << "E:";
 			e.put();
 			cout << "Тактов:" << c2 - c1 << "\n";
-			cout << "Тактов на 1 запуск::" << (c2 - c1) / (float)10000;
+			cout << "Тактов на 1 запуск::" << (c2 - c1) / (float)10000 << "\n";
 
 			system("pause");
 		}
@@ -756,7 +756,7 @@ int main()
 			cout << "E:";
 			e.put();
 			cout << "Тактов:" << c2 - c1 << "\n";
-			cout << "Тактов на 1 запуск::" << (c2 - c1) / (float)100000;
+			cout << "Тактов на 1 запуск::" << (c2 - c1) / (float)100000 << "\n";
 
 			system("pause");
 		}
@@ -797,7 +797,7 @@ int main()
 			cout << "E:";
 			e.put();
 			cout << "Тактов:" << c2 - c1 << "\n";
-			cout << "Тактов на 1 запуск::" << (c2 - c1) / (float)100000;
+			cout << "Тактов на 1 запуск:" << (c2 - c1) / (float)100000 << "\n";
 
 			system("pause");
 		}
