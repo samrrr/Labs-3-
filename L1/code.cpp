@@ -8,19 +8,6 @@ using namespace std;
 struct DATA1 //массив
 {
 	char a[27];
-
-	void gen()
-	{
-		int r = 0;
-		for (int i = 0; i < 26; i++)
-		if (rand() % 2 == 0)
-		{
-			a[r] = 'a' + i;
-			r++;
-		}
-		a[r] = 0;
-	}
-
 };
 
 struct SP_EL
@@ -32,54 +19,31 @@ struct SP_EL
 struct DATA2 //список
 {
 	SP_EL *spis;
-	void gen()
-	{
-		SP_EL *p = spis;
-		while (p)
-		{
-			SP_EL *p1 = p;
-			p = p->n;
-			delete p1;
-		}
-
-		spis = NULL;
-
-		for (int i = 0; i < 26; i++)
-			if (rand() % 2 == 0)
-			{
-				SP_EL *p = new SP_EL;
-				p->ch = 'a' + i;
-				p->n = spis;
-				spis = p;
-			}
-	}
 };
 
 struct DATA3 //юниверсум
 {
 	bool a[26];
-
-	void gen()
-	{
-
-		for (int i = 0; i < 26; i++)
-			a[i] = rand() % 2;
-	}
 };
 
 struct DATA4 //сжатый юниверсум
 {
 	long a;
-
-	void gen()
-	{
-
-		a = 0;
-
-		for (int i = 0; i < 26; i++)
-			a |= (rand() % 2)<<i;
-	}
 };
+
+char* gen()
+{
+	static char s[27];
+	int r = 0;
+	for (int i = 0; i < 26; i++)
+		if (rand() % 2 == 0)
+		{
+			s[r] = 'a' + i;
+			r++;
+		}
+	s[r] = 0;
+	return s;
+}
 
 void init(char *_s, DATA1 *_a)
 {
@@ -212,6 +176,7 @@ void put(DATA4 _a)
 }
 
 void processing(DATA1 &_a, DATA1 &_b, DATA1 &_c, DATA1 &_d, DATA1 &_e);
+void processing(DATA2 &_a, DATA2 &_b, DATA2 &_c, DATA2 &_d, DATA2 &_e);
 
 int main()
 {
@@ -257,33 +222,50 @@ int main()
 	/**/
 	system("cls");
 
-	DATA1 a;
-	DATA1 b;
-	DATA1 c;
-	DATA1 d;
-	DATA1 e;
+	DATA1 a1;
+	DATA1 b1;
+	DATA1 c1;
+	DATA1 d1;
+	DATA1 e1;
 
-	a.gen();
-	b.gen();
-	c.gen();
-	d.gen();
+	DATA2 a2;
+	DATA2 b2;
+	DATA2 c2;
+	DATA2 d2;
+	DATA2 e2;
 
-	//init("abcd", &a);
-	//init("cdef", &b);
-	//init("cfr", &c);
-	//init("xz", &d);
+
+	strcpy(s_a, gen());
+	strcpy(s_b, gen());
+	strcpy(s_c, gen());
+	strcpy(s_d, gen());
+
+	init(s_a, &a2);
+	init(s_b, &b2);
+	init(s_c, &c2);
+	init(s_d, &d2);
+
+	init(s_a, &a1);
+	init(s_b, &b1);
+	init(s_c, &c1);
+	init(s_d, &d1);
 
 	cout << "A:";
-	put(a);
+	put(a1);
 	cout << "B:";
-	put(b);
+	put(b1);
 	cout << "C:";
-	put(c);
+	put(c1);
 	cout << "D:";
-	put(d);
-	cout << "E:";
-	processing(a, b, c, d,e);
-	put(e);
+	put(d1);
+
+	processing(a1, b1, c1, d1, e1);
+	processing(a2, b2, c2, d2, e2);
+
+	cout << "E1:";
+	put(e1);
+	cout << "E2:";
+	put(e2);
 	/*
 	auto c2 = clock();
 	auto c1 = clock();
@@ -306,6 +288,7 @@ int main()
 
 void processing(DATA1 &_a, DATA1 &_b, DATA1 &_c, DATA1 &_d, DATA1 &_e)
 {
+	//  1   2   3
 	//a & b / c | d
 
 	int r = 0;
@@ -313,7 +296,7 @@ void processing(DATA1 &_a, DATA1 &_b, DATA1 &_c, DATA1 &_d, DATA1 &_e)
 	DATA1 f;
 
 	//1
-	for (char *s1 = _a.a, *s2 = _b.a; *s1 & *s2; *s1 > *s2 ? s2++ : s1++)
+	for (char *s1 = _a.a, *s2 = _b.a; *s1 && *s2; *s1 > *s2 ? s2++ : s1++)
 		if (*s1 == *s2)
 		{
 			f.a[r] = *s1;
@@ -322,7 +305,7 @@ void processing(DATA1 &_a, DATA1 &_b, DATA1 &_c, DATA1 &_d, DATA1 &_e)
 	f.a[r] = 0;
 
 	//2
-	for (char *s1 = f.a, *s2 = _c.a; *s1 & *s2; *s1 > *s2 ? s2++ : s1++)
+	for (char *s1 = f.a, *s2 = _c.a; *s1 && *s2; *s1 > *s2 ? s2++ : s1++)
 		if (*s1 == *s2)
 		{
 			*s1 = '-';
@@ -341,29 +324,12 @@ void processing(DATA1 &_a, DATA1 &_b, DATA1 &_c, DATA1 &_d, DATA1 &_e)
 	//3
 	r = 0;
 	char *s1=f.a, *s2=_d.a;
-	/** /
-	if (*s1 < *s2)
-	{
-		if (*s1 != 0)
-		{
-			_e.a[r] = *s1;
-			r++;
-		}
-	}
-	else
-	{
-		if (*s2 != 0)
-		{
-			_e.a[r] = *s2;
-			r++;
-		}
-	}
-	/**/
+
 	while (*s1 || *s2)
 	{
 		if (*s1 > *s2 && *s2 != 0 || *s1 == 0)
 		{
-			if (*s2 != _e.a[r - 1] && *s2 != 0)
+			if ((r == 0 || *s2 != _e.a[r - 1]) && *s2 != 0)
 			{
 				_e.a[r] = *s2;
 				r++;
@@ -372,7 +338,7 @@ void processing(DATA1 &_a, DATA1 &_b, DATA1 &_c, DATA1 &_d, DATA1 &_e)
 		}
 		else
 		{
-			if (*s1 != _e.a[r - 1] && *s1 != 0)
+			if ((r == 0 || *s1 != _e.a[r - 1]) && *s1 != 0)
 			{
 				_e.a[r] = *s1;
 				r++;
@@ -381,6 +347,109 @@ void processing(DATA1 &_a, DATA1 &_b, DATA1 &_c, DATA1 &_d, DATA1 &_e)
 		}
 	}
 	_e.a[r] = 0;
+	
+}
+
+void processing(DATA2 &_a, DATA2 &_b, DATA2 &_c, DATA2 &_d, DATA2 &_e)
+{
+	//  1   2   3
+	//a & b / c | d
+
+
+	DATA2 f;
+	f.spis = NULL;
+	//1
+	SP_EL *p;
+
+	for (SP_EL *p1 = _a.spis, *p2 = _b.spis; p1 != NULL && p2 != NULL; p1->ch > p2->ch ? p2 = p2->n : p1 = p1->n)
+		if (p1->ch == p2->ch)
+		{
+			if (f.spis == NULL)
+			{
+				p = new SP_EL;
+				f.spis = p;
+				p->n = NULL;
+			}
+			else
+			{
+				p->n = new SP_EL;
+				p = p->n;
+				p->n = NULL;
+			}
+			p->ch = p1->ch;
+		}
+
+	//2
+	SP_EL **g = &f.spis;
+	for (SP_EL *p1 = f.spis, *p2 = _c.spis; p1 != NULL && p2 != NULL;)
+	{
+		if (p1->ch == p2->ch)
+		{
+			p = p1->n;
+			delete (*g);
+			*g = p;
+			p1 = (*g);
+
+		}
+
+
+		if (p1->ch > p2->ch)
+		{
+			p2 = p2->n;
+		}
+		else
+		{
+			p1 = p1->n;
+			g = &((*g)->n);
+		}
+	}
+	
+
+	//3
+	SP_EL *p1 = f.spis, *p2 = _d.spis;
+	p = 0;
+
+	while (p1 != NULL && p2 != NULL)
+	{
+		if (p1->ch > p2->ch && p2 != 0 || p1 == 0)
+		{
+			if (p == NULL || p2->ch != p->ch)
+			{
+				if (p == NULL)
+				{
+					p = new SP_EL;
+					_e.spis = p;
+				}
+				else
+				{
+					p->n = new SP_EL;
+					p = p->n;
+				}
+				p->n = NULL;
+				p->ch = p2->ch;
+			}
+			p2 = p2->n;
+		}
+		else
+		{
+			if (p == NULL || p1->ch != p->ch)
+			{
+				if (p == NULL)
+				{
+					p = new SP_EL;
+					_e.spis = p;
+				}
+				else
+				{
+					p->n = new SP_EL;
+					p = p->n;
+				}
+				p->n = NULL;
+				p->ch = p1->ch;
+			}
+			p1 = p1->n;
+		}
+	}
 	
 }
 
