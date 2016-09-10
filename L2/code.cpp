@@ -713,7 +713,7 @@ int main()
 			auto c2 = clock();
 			auto c1 = clock();
 
-			for (i = 0; i < 10000; i++)
+			for (i = 0; i < 100000; i++)
 			{
 				e = processing(a, b, c, d);
 			}
@@ -723,7 +723,7 @@ int main()
 			cout << "\n" << "E:";
 			e.put();
 			cout << "Тактов:" << c2 - c1 << "\n";
-			cout << "Тактов на 1 запуск:" << (c2 - c1) / (float)10000 << "\n";
+			cout << "Тактов на 1 запуск:" << (c2 - c1) / (float)100000 << "\n";
 
 			system("pause");
 		}

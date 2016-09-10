@@ -5,9 +5,21 @@
 
 using namespace std;
 
+#pragma intrinsic(__rdtsc)
+
+#define REP1 (long)1000000
+#define REP2 (long)10000
+#define REP3 (long)1000000
+#define REP4 (long)1000000
+
+#define ST_CH 'a'
+#define EN_CH 'z'
+#define N_CH 26
+
+
 struct DATA1 //массив
 {
-	char a[27];
+	char a[N_CH+1];
 };
 
 struct SP_EL
@@ -16,6 +28,18 @@ struct SP_EL
 	SP_EL *n;
 };
 
+SP_EL* freesp(SP_EL *_sp)
+{
+	while (_sp)
+	{
+		SP_EL* p;
+		p = _sp;
+		_sp = _sp->n;
+		delete p;
+	}
+	return NULL;
+}
+
 struct DATA2 //список
 {
 	SP_EL *spis;
@@ -23,7 +47,7 @@ struct DATA2 //список
 
 struct DATA3 //юниверсум
 {
-	bool a[26];
+	bool a[N_CH];
 };
 
 struct DATA4 //сжатый юниверсум
@@ -31,14 +55,33 @@ struct DATA4 //сжатый юниверсум
 	long a;
 };
 
-char* gen()
+char* gen(int _n = rand() % (N_CH - 5) + 5)
 {
-	static char s[27];
+	static char s[N_CH+1];
+	bool n[N_CH];
 	int r = 0;
-	for (int i = 0; i < 26; i++)
-		if (rand() % 2 == 0)
+	int i;
+	
+	if (_n > N_CH)
+		_n = N_CH;
+
+	for (i = 0; i < N_CH; i++)
+		n[i] = 0;
+	while (_n > 0)
+	{
+		i = rand() % N_CH;
+		while (n[i])
+			i = (i + 1) % N_CH;
+
+		n[i] = 1;
+
+		_n--;
+	}
+
+	for (i = 0; i < N_CH; i++)
+		if (n[i])
 		{
-			s[r] = 'a' + i;
+			s[r] = ST_CH + i;
 			r++;
 		}
 	s[r] = 0;
@@ -47,28 +90,28 @@ char* gen()
 
 void init(char *_s, DATA1 *_a)
 {
-	int ais[26];
+	int ais[N_CH];
 	SP_EL *p;
 	
-	for (int i = 0; i < 26; i++)
+	for (int i = 0; i < N_CH; i++)
 		ais[i] = 0;
 
 	while (*_s)
 	{
-		if (*_s >= 'a' && *_s <= 'z')
-			if (ais[*_s - 'a'] == 0)
+		if (*_s >= ST_CH && *_s <= EN_CH)
+			if (ais[*_s - ST_CH] == 0)
 			{
-				ais[*_s - 'a'] = 1;
+				ais[*_s - ST_CH] = 1;
 			}
 		_s++;
 	}
 
 	int r = 0;
 
-	for (int i = 0; i < 26; i++)
+	for (int i = 0; i < N_CH; i++)
 		if (ais[i] == 1)
 		{
-			_a->a[r] = i + 'a';
+			_a->a[r] = i + ST_CH;
 			r++;
 		}
 	_a->a[r] = 0;
@@ -77,20 +120,20 @@ void init(char *_s, DATA1 *_a)
 
 void init(char *_s, DATA2 *_a)
 {
-	int ais[26];
+	int ais[N_CH];
 	SP_EL *p;
 
 	_a->spis = NULL;
 
-	for (int i = 0; i < 26; i++)
+	for (int i = 0; i < N_CH; i++)
 		ais[i] = 0;
 
 	while (*_s)
 	{
-		if (*_s >= 'a' && *_s <= 'z')
-			if (ais[*_s - 'a'] == 0)
+		if (*_s >= ST_CH && *_s <= EN_CH)
+			if (ais[*_s - ST_CH] == 0)
 			{
-				ais[*_s - 'a'] = 1;
+				ais[*_s - ST_CH] = 1;
 			}
 		_s++;
 	}
@@ -100,20 +143,20 @@ void init(char *_s, DATA2 *_a)
 		{
 			p = new SP_EL;
 			p->n = _a->spis;
-			p->ch = i + 'a';
+			p->ch = i + ST_CH;
 			_a->spis = p;
 		}
 }
 
 void init(char *_s, DATA3 *_a)
 {
-	for (int i = 0; i < 26; i++)
+	for (int i = 0; i < N_CH; i++)
 		_a->a[i] = 0;
 	
 	while (*_s)
 	{
-		if (*_s >= 'a' && *_s <= 'z')
-			_a->a[*_s - 'a'] = 1;
+		if (*_s >= ST_CH && *_s <= EN_CH)
+			_a->a[*_s - ST_CH] = 1;
 		_s++;
 	}
 }
@@ -125,9 +168,9 @@ void init(char *_s, DATA4 *_a)
 
 	while (*_s)
 	{
-		if (*_s >= 'a' && *_s <= 'z')
+		if (*_s >= ST_CH && *_s <= EN_CH)
 		{
-			_a->a |= 1 << (*_s - 'a');
+			_a->a |= 1 << (*_s - ST_CH);
 		}
 		_s++;
 	}
@@ -153,10 +196,10 @@ void put(DATA3 _a)
 {
 	cout << "{";
 
-	for (int i = 0; i < 26; i++)
+	for (int i = 0; i < N_CH; i++)
 		if (_a.a[i])
 		{
-			cout << (char)(i + 'a');
+			cout << (char)(i + ST_CH);
 		}
 
 	cout << "}\n";
@@ -166,10 +209,10 @@ void put(DATA4 _a)
 {
 	cout << "{";
 
-	for (int i = 0; i < 26; i++)
+	for (int i = 0; i < N_CH; i++)
 		if (_a.a & (1 << i))
 		{
-			cout << (char)(i + 'a');
+			cout << (char)(i + ST_CH);
 		}
 
 	cout << "}\n";
@@ -177,6 +220,13 @@ void put(DATA4 _a)
 
 void processing(DATA1 &_a, DATA1 &_b, DATA1 &_c, DATA1 &_d, DATA1 &_e);
 void processing(DATA2 &_a, DATA2 &_b, DATA2 &_c, DATA2 &_d, DATA2 &_e);
+void processing(DATA3 &_a, DATA3 &_b, DATA3 &_c, DATA3 &_d, DATA3 &_e);
+void processing(DATA4 &_a, DATA4 &_b, DATA4 &_c, DATA4 &_d, DATA4 &_e);
+
+unsigned long long time_req()
+{
+	return __rdtsc();
+}
 
 int main()
 {
@@ -192,7 +242,7 @@ int main()
 	char s_a[30], s_b[30], s_c[30], s_d[30];
 
 	int i;
-
+	s_a[0] = 0;
 	/** /
 
 	//1-N^2
@@ -220,70 +270,164 @@ int main()
 	cout << "Машинное слово:";
 	processing(DATA4(s_a), DATA4(s_b), DATA4(s_c), DATA4(s_d)).put();
 	/**/
-	system("cls");
 
-	DATA1 a1;
-	DATA1 b1;
-	DATA1 c1;
-	DATA1 d1;
-	DATA1 e1;
+	char ch;
 
-	DATA2 a2;
-	DATA2 b2;
-	DATA2 c2;
-	DATA2 d2;
-	DATA2 e2;
+	do{
+		system("cls");
+
+		DATA1 a1;
+		DATA1 b1;
+		DATA1 c1;
+		DATA1 d1;
+		DATA1 e1;
+
+		DATA2 a2;
+		DATA2 b2;
+		DATA2 c2;
+		DATA2 d2;
+		DATA2 e2;
+
+		DATA3 a3;
+		DATA3 b3;
+		DATA3 c3;
+		DATA3 d3;
+		DATA3 e3;
+
+		DATA4 a4;
+		DATA4 b4;
+		DATA4 c4;
+		DATA4 d4;
+		DATA4 e4;
+
+		strcpy(s_a, gen());
+		strcpy(s_b, gen());
+		strcpy(s_c, gen());
+		strcpy(s_d, gen());
+
+		cout << "N среднее=" << (strlen(s_a) + strlen(s_b) + strlen(s_c) + strlen(s_d)) / 4.0 << " \n";
+
+		init(s_a, &a1);
+		init(s_b, &b1);
+		init(s_c, &c1);
+		init(s_d, &d1);
+
+		init(s_a, &a2);
+		init(s_b, &b2);
+		init(s_c, &c2);
+		init(s_d, &d2);
+
+		init(s_a, &a3);
+		init(s_b, &b3);
+		init(s_c, &c3);
+		init(s_d, &d3);
+
+		init(s_a, &a4);
+		init(s_b, &b4);
+		init(s_c, &c4);
+		init(s_d, &d4);
+
+		cout << "A:";
+		put(a1);
+		cout << "B:";
+		put(b1);
+		cout << "C:";
+		put(c1);
+		cout << "D:";
+		put(d1);
+		cout << "\n";
+
+		unsigned __int64 t1,t2;
+
+		t1 = time_req();
+		for (i = 0; i < REP1; i++)
+		{
+			e1.a[0] = 0;
+			processing(a1, b1, c1, d1, e1);
+		}
+		t2 = time_req();
+
+		cout << "E1:";
+		put(e1);
+		cout << "Тактов за " << REP1 << " повторений:" << t2 - t1 << "\n";
+		cout << "Тактов на 1 повторение:" << (t2 - t1) / (float)REP1 << "\n\n";
+
+		t1 = time_req();
+		for (i = 0; i < REP2; i++)
+		{
+			processing(a2, b2, c2, d2, e2);
+			e2.spis = freesp(e2.spis);
+		}
+		t2 = time_req();
+
+		processing(a2, b2, c2, d2, e2);
+		cout << "E2:";
+		put(e2);
+		a2.spis = freesp(a2.spis);
+		b2.spis = freesp(b2.spis);
+		c2.spis = freesp(c2.spis);
+		d2.spis = freesp(d2.spis);
+		e2.spis = freesp(e2.spis);
+		cout << "Тактов за " << REP2 << " повторений:" << t2 - t1 << "\n";
+		cout << "Тактов на 1 повторение:" << (t2 - t1) / (float)REP2 << "\n\n";
+
+		t1 = time_req();
+		for (i = 0; i < REP3; i++)
+		{
+			e3.a[0] = 0;
+			processing(a3, b3, c3, d3, e3);
+		}
+		t2 = time_req();
+
+		cout << "E3:";
+		put(e3);
+		cout << "Тактов за " << REP3 << " повторений:" << t2 - t1 << "\n";
+		cout << "Тактов на 1 повторение:" << (t2 - t1) / (float)REP3 << "\n\n";
+
+		t1 = time_req();
+		for (i = 0; i < REP4; i++)
+		{
+			if (i % (REP4 / 10) == 0)
+				cout << " \b";
+			e4.a = 0;
+			processing(a4, b4, c4, d4, e4);
+		}
+		t2 = time_req();
+
+		cout << "E4:";
+		put(e4);
+		cout << "Тактов за " << REP4 << " повторений:" << t2 - t1 << "\n";
+		cout << "Тактов на 1 повторение:" << (t2 - t1)/(float)REP4 << "\n\n";
 
 
-	strcpy(s_a, gen());
-	strcpy(s_b, gen());
-	strcpy(s_c, gen());
-	strcpy(s_d, gen());
+		/*
+		auto c2 = time_req();
+		auto c1 = time_req();
 
-	init(s_a, &a2);
-	init(s_b, &b2);
-	init(s_c, &c2);
-	init(s_d, &d2);
+		for (i = 0; i < 100000; i++)
+		e = processing(a, b, c, d);
 
-	init(s_a, &a1);
-	init(s_b, &b1);
-	init(s_c, &c1);
-	init(s_d, &d1);
+		c2 = time_req();
 
-	cout << "A:";
-	put(a1);
-	cout << "B:";
-	put(b1);
-	cout << "C:";
-	put(c1);
-	cout << "D:";
-	put(d1);
+		cout << "\n" << "E:";
+		e.put();
+		cout << "Тактов:" << c2 - c1 << "\n";
+		cout << "Тактов на 1 запуск:" << (c2 - c1) / (float)100000 << "\n";
 
-	processing(a1, b1, c1, d1, e1);
-	processing(a2, b2, c2, d2, e2);
+		system("pause");
+		*/
 
-	cout << "E1:";
-	put(e1);
-	cout << "E2:";
-	put(e2);
-	/*
-	auto c2 = clock();
-	auto c1 = clock();
+		cout << "Сделать ещё тест?(y/n)";
 
-	for (i = 0; i < 100000; i++)
-	e = processing(a, b, c, d);
+		do
+		{
+			ch=getch();
+		} 
+		while (ch != 'y' && ch != 'Y' &&ch != 'n' &&ch != 'N');
 
-	c2 = clock();
+	}
+	while (ch == 'y' || ch == 'Y');
 
-	cout << "\n" << "E:";
-	e.put();
-	cout << "Тактов:" << c2 - c1 << "\n";
-	cout << "Тактов на 1 запуск:" << (c2 - c1) / (float)100000 << "\n";
-
-	system("pause");
-	*/
-	system("pause");
-	
 }
 
 void processing(DATA1 &_a, DATA1 &_b, DATA1 &_c, DATA1 &_d, DATA1 &_e)
@@ -392,26 +536,28 @@ void processing(DATA2 &_a, DATA2 &_b, DATA2 &_c, DATA2 &_d, DATA2 &_e)
 
 		}
 
-
-		if (p1->ch > p2->ch)
-		{
-			p2 = p2->n;
-		}
-		else
-		{
-			p1 = p1->n;
-			g = &((*g)->n);
-		}
+		if (p1!=NULL)
+			if (p1->ch > p2->ch)
+			{
+				p2 = p2->n;
+			}
+			else
+			{
+				p1 = p1->n;
+				g = &((*g)->n);
+			}
 	}
 	
-
+	
 	//3
 	SP_EL *p1 = f.spis, *p2 = _d.spis;
 	p = 0;
 
-	while (p1 != NULL && p2 != NULL)
+	_e.spis = 0;
+
+	while (p1 != NULL || p2 != NULL)
 	{
-		if (p1->ch > p2->ch && p2 != 0 || p1 == 0)
+		if (p1 == 0 || p2 != 0 && p1->ch > p2->ch)
 		{
 			if (p == NULL || p2->ch != p->ch)
 			{
@@ -451,6 +597,35 @@ void processing(DATA2 &_a, DATA2 &_b, DATA2 &_c, DATA2 &_d, DATA2 &_e)
 		}
 	}
 	
+	f.spis = freesp(f.spis);
+
 }
 
+void processing(DATA3 &_a, DATA3 &_b, DATA3 &_c, DATA3 &_d, DATA3 &_e)
+{
+	//  1   2   3
+	//a & b / c | d
 
+
+	DATA3 f;
+	//1
+	for (int i = 0; i < N_CH; i++)
+		f.a[i] = (_a.a[i] && _b.a[i]);
+
+	//2
+	for (int i = 0; i < N_CH; i++)
+		if (_c.a[i])
+			f.a[i] = 0;
+
+	//3
+	for (int i = 0; i < N_CH; i++)
+		if (_d.a[i])
+			f.a[i] = 1;
+	for (int i = 0; i < N_CH; i++)
+		_e.a[i] = f.a[i];
+}
+
+void processing(DATA4 &_a, DATA4 &_b, DATA4 &_c, DATA4 &_d, DATA4 &_e)
+{
+	_e.a = ((_a.a & _b.a) & (~_c.a)) | _d.a;
+}
