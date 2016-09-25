@@ -5,9 +5,6 @@
 
 using namespace std;
 
-
-using namespace std;
-
 #pragma intrinsic(__rdtsc)
 
 const long REP1 = 1000000;
