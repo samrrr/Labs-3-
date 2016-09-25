@@ -1,7 +1,10 @@
-#include <windows.h>
+Ôªø#include <windows.h>
 #include <conio.h>
 #include <time.h>
 #include <iostream>
+
+using namespace std;
+
 
 using namespace std;
 
@@ -17,42 +20,7 @@ const char EN_CH = 'z';
 const int N_CH = 26;
 
 
-class SET1
-{
-private:
-	char a[N_CH + 1];
-public:
-	SET1()
-	{
-		a[0] = 0;
-	}
-	SET1(char *_s)
-	{
-		int r = 0;
-		bool m[26];
-
-		for (int i = 0; i < N_CH; i++)
-			m[i] = 0;
-		
-		for (; *_s; _s++)
-		{
-			m[*_s-ST_CH] = 1;
-		}
-
-		for (int i = 0; i < N_CH; i++)
-			if (m[i])
-			{
-				a[r] = ST_CH + i;
-				r++;
-			}
-
-		a[r] = 0;
-	}
-
-};
-
-
-struct DATA1 //Ï‡ÒÒË‚
+struct DATA1 //–º–∞—Å—Å–∏–≤
 {
 	char a[N_CH + 1];
 };
@@ -63,7 +31,7 @@ struct SP_EL
 	SP_EL *n;
 };
 
-struct DATA2 //ÒÔËÒÓÍ
+struct DATA2 //—Å–ø–∏—Å–æ–∫
 {
 	SP_EL *spis;
 };
@@ -80,12 +48,12 @@ void freesp(DATA2 _sp)
 	_sp.spis = nullptr;
 }
 
-struct DATA3 //˛ÌË‚ÂÒÛÏ
+struct DATA3 //—É–Ω–∏–≤–µ—Ä—Å—É–º
 {
 	bool a[N_CH];
 };
 
-struct DATA4 //ÒÊ‡Ú˚È ˛ÌË‚ÂÒÛÏ
+struct DATA4 //–º–∞—à–∏–Ω–Ω–æ–µ —Å–ª–æ–≤–æ
 {
 	long a;
 };
@@ -258,10 +226,594 @@ void processing(DATA2 &_a, DATA2 &_b, DATA2 &_c, DATA2 &_d, DATA2 &_e);
 void processing(DATA3 &_a, DATA3 &_b, DATA3 &_c, DATA3 &_d, DATA3 &_e);
 void processing(DATA4 &_a, DATA4 &_b, DATA4 &_c, DATA4 &_d, DATA4 &_e);
 
+
+
+class SET1
+{
+private:
+	char a[N_CH + 1];
+public:
+
+	SET1()
+	{
+		a[0] = 0;
+	}
+	void init(char *_s)
+	{
+
+		int ais[N_CH];
+
+		for (int i = 0; i < N_CH; i++)
+			ais[i] = 0;
+
+		while (*_s)
+		{
+			if (*_s >= ST_CH && *_s <= EN_CH)
+				if (ais[*_s - ST_CH] == 0)
+				{
+					ais[*_s - ST_CH] = 1;
+				}
+			_s++;
+		}
+
+		int r = 0;
+
+		for (int i = 0; i < N_CH; i++)
+			if (ais[i] == 1)
+			{
+				a[r] = i + ST_CH;
+				r++;
+			}
+		a[r] = 0;
+	}
+	SET1(char *_s)
+	{
+		init(_s);
+	}
+
+	void put()
+	{
+		cout << "{";
+		cout << a;
+		cout << "}\n";
+	}
+
+	const SET1& operator= (const SET1 &_a)
+	{
+		for (int i = 0; i < N_CH + 1; i++)
+			a[i] = _a.a[i];
+
+		return *this;
+	}
+	SET1(const SET1 &_a)
+	{
+		for (int i = 0; i < N_CH + 1; i++)
+			a[i] = _a.a[i];
+	}
+	friend SET1 operator & (const SET1 &_a, const SET1 &_b)
+	{
+		SET1 c;
+
+		int r = 0;
+		for (const char *s1 = _a.a, *s2 = _b.a; *s1 && *s2; *s1 > *s2 ? s2++ : s1++)
+			if (*s1 == *s2)
+			{
+				c.a[r] = *s1;
+				r++;
+			}
+		c.a[r] = 0;
+
+		return c;
+	}
+	friend SET1 operator | (const SET1 &_a, const SET1 &_b)
+	{
+		SET1 c;
+
+		int r;
+		r = 0;
+		const char *s1 = _a.a, *s2 = _b.a;
+
+		while (*s1 || *s2)
+		{
+			if (*s1 > *s2 && *s2 != 0 || *s1 == 0)
+			{
+				if ((r == 0 || *s2 != c.a[r - 1]) && *s2 != 0)
+				{
+					c.a[r] = *s2;
+					r++;
+				}
+				s2++;
+			}
+			else
+			{
+				if ((r == 0 || *s1 != c.a[r - 1]) && *s1 != 0)
+				{
+					c.a[r] = *s1;
+					r++;
+				}
+				s1++;
+			}
+		}
+		c.a[r] = 0;
+
+
+		return c;
+	}
+	friend SET1 operator / (const SET1 &_a, const SET1 &_b)
+	{
+		SET1 c = _a;
+		int r;
+
+		for (char *s1 = c.a, *s2 = (char*)_b.a; *s1 && *s2; *s1 > *s2 ? s2++ : s1++)
+			if (*s1 == *s2)
+			{
+				*s1 = '-';
+			}
+
+		r = 0;
+		for (char *s1 = c.a; *s1; s1++)
+			if (*s1 != '-')
+			{
+				c.a[r] = *s1;
+				r++;
+			}
+		c.a[r] = 0;
+
+		return c;
+	}
+
+};
+
+class SET2 //√±√Ø√®√±√Æ√™
+{
+private:
+	//int id;
+	SP_EL *spis;
+public:
+
+
+	~SET2()
+	{
+		//printf("–î–µ—Å—Ç—Ä—É–∫—Ç–æ—Ä(%i)\n",id);
+		SP_EL *p = spis;
+		while (p)
+		{
+			SP_EL *p1 = p;
+			p = p->n;
+			delete p1;
+		}
+	}
+
+	SET2()
+	{
+		//id = rand() % 10000;
+		//printf("–ö–æ–Ω—Å—Ç—Ä—É–∫—Ç–æ—Ä(%i)\n", id);
+		spis = 0;
+	}
+	void init(char *_s)
+	{
+		//id = rand() % 10000;
+		//printf("–ò–Ω–∏—Ü–∏–∞–ª–∏–∑–∞—Ü–∏—è –æ—Ç —Å—Ç—Ä–æ–∫–∏(%i)\n", id);
+
+		int ais[N_CH];
+		SP_EL *p;
+
+		spis = nullptr;
+
+		for (int i = 0; i < N_CH; i++)
+			ais[i] = 0;
+
+		while (*_s)
+		{
+			if (*_s >= 'a' && *_s <= 'z')
+				ais[*_s - 'a'] = 1;
+			_s++;
+		}
+
+		for (int i = N_CH-1; i >=0; i--)
+			if (ais[i])
+			{
+				p = new SP_EL;
+				p->n = spis;
+				spis = p;
+				spis->ch = i + ST_CH;
+			}
+
+	}
+	SET2(char *_s)
+	{
+		//printf("–ö–æ–Ω—Å—Ç—Ä—É–∫—Ç–æ—Ä –æ—Ç —Å—Ç—Ä–æ–∫–∏\n");
+		init(_s);
+	}
+	void put()
+	{
+
+		cout << "{";
+		for (SP_EL *p = spis; p; p = p->n)
+			cout << p->ch;
+
+		cout << "}\n";
+	}
+
+	const SET2& operator= (const SET2 &_a)
+	{
+		//printf("=(%i)\n",_a.id);
+		SP_EL *p;
+
+		p = spis;
+		while (p)
+		{
+			SP_EL *p1 = p;
+			p = p->n;
+			delete p1;
+		}
+
+		SP_EL *l;
+		SP_EL *el = _a.spis;
+
+		spis = new SP_EL;
+		spis->ch = el->ch;
+		l = spis;
+		el = el->n;
+
+		for (; el; el = el->n)
+		{
+			p = new SP_EL;
+			p->ch = el->ch;
+			l->n = p;
+			l = p;
+		}
+		l->n = nullptr;
+
+		return *this;
+	}
+	SET2(const SET2 &_a)
+	{
+		//id = rand() % 10000;
+		//printf("–°–æ–∑–¥–∞–Ω–∏–µ –∫–æ–ø–∏–∏(%i) id –∫–æ–ø–∏–∏(%i)\n",_a.id, id);
+		if (_a.spis == nullptr)
+		{
+			spis = nullptr;
+			return;
+		}
+		SP_EL *p;
+		SP_EL *l;
+		SP_EL *el = _a.spis;
+
+		spis = new SP_EL;
+		spis->ch = el->ch;
+		l=spis;
+		el = el->n;
+
+		for (; el; el = el->n)
+		{
+			p = new SP_EL;
+			p->ch = el->ch;
+			l->n = p;
+			l = p;
+		}
+		l->n = nullptr;
+
+	}
+	friend SET2 operator & (const SET2 &_a, const SET2 &_b)
+	{
+		//printf("& (%i)&(%i)\n", _a.id, _b.id);
+		SET2 c;
+
+		SP_EL *p;
+
+		for (SP_EL *p1 = _a.spis, *p2 = _b.spis; p1 != nullptr && p2 != nullptr;
+			p1->ch > p2->ch ? p2 = p2->n : p1 = p1->n)
+			if (p1->ch == p2->ch)
+			{
+				if (c.spis == nullptr)
+				{
+					p = new SP_EL;
+					c.spis = p;
+					p->n = nullptr;
+				}
+				else
+				{
+					p->n = new SP_EL;
+					p = p->n;
+					p->n = nullptr;
+				}
+				p->ch = p1->ch;
+			}
+
+
+
+		return c;
+	}
+	friend SET2 operator | (const SET2 &_a, const SET2 &_b)
+	{
+		//printf("| (%i)|(%i)\n", _a.id, _b.id);
+		SET2 c;
+
+		SP_EL *p1 = _a.spis, *p2 = _b.spis;
+		SP_EL *p = nullptr;
+
+		c.spis = 0;
+
+		while (p1 || p2)
+		{
+			if (p1 == 0 || p2 != 0 && p1->ch > p2->ch)
+			{
+				if (p == nullptr || p2->ch != p->ch)
+				{
+					if (p == nullptr)
+					{
+						p = new SP_EL;
+						c.spis = p;
+					}
+					else
+					{
+						p->n = new SP_EL;
+						p = p->n;
+					}
+					p->n = nullptr;
+					p->ch = p2->ch;
+				}
+				p2 = p2->n;
+			}
+			else
+			{
+				if (p == nullptr || p1->ch != p->ch)
+				{
+					if (p == nullptr)
+					{
+						p = new SP_EL;
+						c.spis = p;
+					}
+					else
+					{
+						p->n = new SP_EL;
+						p = p->n;
+					}
+					p->n = nullptr;
+					p->ch = p1->ch;
+				}
+				p1 = p1->n;
+			}
+		}
+
+		return c;
+	}
+
+
+	friend SET2 operator / (const SET2 &_a,const SET2 &_b)
+	{
+		//printf("/ (%i)/(%i)\n", _a.id, _b.id);
+		SET2 c(_a);
+
+		SP_EL *p;
+
+		for (SP_EL **p1 = &c.spis, *p2 = _b.spis; (*p1) && p2;)
+		{
+			if ((*p1)->ch == p2->ch)
+			{
+				p = (*p1)->n;
+				delete (*p1);
+				*p1 = p;
+
+			}
+
+			if (*p1)
+				if ((*p1)->ch > p2->ch)
+				{
+					p2 = p2->n;
+				}
+				else
+				{
+					p1 = &((*p1)->n);
+				}
+
+		}
+
+		return c;
+	}
+
+};
+
+class SET3 //√æ√≠√®√¢√•√∞√±√≥√¨
+{
+private:
+	bool a[N_CH];
+public:
+
+	SET3()
+	{
+		for (int i = 0; i < N_CH; i++)
+			a[i] = 0;
+	}
+	void init(char *_s)
+	{
+
+		for (int i = 0; i < N_CH; i++)
+			a[i] = 0;
+
+
+		while (*_s)
+		{
+			if (*_s >= 'a' && *_s <= 'z')
+				if (a[*_s - 'a'] == 0)
+				{
+					a[*_s - 'a'] = 1;
+				}
+			_s++;
+		}
+	}
+	SET3(char *_s)
+	{
+		init(_s);
+	}
+	void put()
+	{
+
+		bool b = 0;
+
+		cout << "{";
+		for (int i = 0; i < N_CH; i++)
+			if (a[i])
+			{
+				b = 1;
+				cout << (char)(i + 'a');
+			}
+
+		cout << "}\n";
+	}
+
+	const SET3& operator= (const SET3 &_a)
+	{
+		for (int i = 0; i < N_CH; i++)
+			a[i] = _a.a[i];
+
+		return *this;
+	}
+	SET3(const SET3 &_a)
+	{
+		for (int i = 0; i < N_CH; i++)
+			a[i] = _a.a[i];
+	}
+	friend SET3 operator & (const SET3 &_a, const SET3 &_b)
+	{
+		SET3 c;
+
+		for (int i = 0; i < N_CH; i++)
+		{
+			c.a[i] = _a.a[i] & _b.a[i];
+		}
+
+		return c;
+	}
+	friend SET3 operator | (const SET3 &_a, const SET3 &_b)
+	{
+		SET3 c;
+
+		for (int i = 0; i < N_CH; i++)
+		{
+			c.a[i] = _a.a[i] | _b.a[i];
+		}
+
+		return c;
+	}
+	friend SET3 operator / (const SET3 &_a, const SET3 &_b)
+	{
+		SET3 c;
+
+		for (int i = 0; i < N_CH; i++)
+		{
+			c.a[i] = _a.a[i] & !_b.a[i];
+		}
+
+		return c;
+	}
+
+};
+
+class SET4 //√±√¶√†√≤√ª√© √æ√≠√®√¢√•√∞√±√≥√¨
+{
+private:
+	long a;
+public:
+
+	SET4()
+	{
+		a = 0;
+	}
+	void init(char *_s)
+	{
+		a = 0;
+
+
+		while (*_s)
+		{
+			if (*_s >= 'a' && *_s <= 'z')
+			{
+				a |= 1 << (*_s - 'a');
+			}
+			_s++;
+		}
+	}
+	SET4(char *_s)
+	{
+		init(_s);
+	}
+	void put()
+	{
+
+		bool b = 0;
+
+		cout << "{";
+		for (int i = 0; i < N_CH; i++)
+			if (a & (1 << i))
+			{
+				b = 1;
+				cout << (char)(i + 'a');
+			}
+
+		cout << "}\n";
+	}
+
+	const SET4& operator= (const SET4 &_a)
+	{
+		a = _a.a;
+
+		return *this;
+	}
+	SET4(const SET4 &_a)
+	{
+		a = _a.a;
+	}
+	friend SET4 operator & (const SET4 &_a, const SET4 &_b)
+	{
+		SET4 c;
+
+		c.a = _a.a & _b.a;
+
+		return c;
+	}
+	friend SET4 operator | (const SET4 &_a, const SET4 &_b)
+	{
+		SET4 c;
+
+		c.a = _a.a | _b.a;
+
+		return c;
+	}
+	friend SET4 operator / (const SET4 &_a, const SET4 &_b)
+	{
+		SET4 c;
+
+		c.a = _a.a & ~_b.a;
+
+		return c;
+	}
+
+};
+
+
+
+
+
+
 unsigned long long time_req()
 {
 	return __rdtsc();
 }
+
+
+
+
+void processing(SET1 &_a, SET1 &_b, SET1 &_c, SET1 &_d, SET1 &_e);
+void processing(SET2 &_a, SET2 &_b, SET2 &_c, SET2 &_d, SET2 &_e);
+void processing(SET3 &_a, SET3 &_b, SET3 &_c, SET3 &_d, SET3 &_e);
+void processing(SET4 &_a, SET4 &_b, SET4 &_c, SET4 &_d, SET4 &_e);
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 int main()
 {
@@ -301,12 +853,37 @@ int main()
 		DATA4 d4;
 		DATA4 e4;
 
+		SET1 a5;
+		SET1 b5;
+		SET1 c5;
+		SET1 d5;
+		SET1 e5;
+
+		SET2 a6;
+		SET2 b6;
+		SET2 c6;
+		SET2 d6;
+		SET2 e6;
+
+		SET3 a7;
+		SET3 b7;
+		SET3 c7;
+		SET3 d7;
+		SET3 e7;
+
+		SET4 a8;
+		SET4 b8;
+		SET4 c8;
+		SET4 d8;
+		SET4 e8;
+
+
 		strcpy(s_a, gen());
 		strcpy(s_b, gen());
 		strcpy(s_c, gen());
 		strcpy(s_d, gen());
 
-		cout << "N ÒÂ‰ÌÂÂ=" << (strlen(s_a) + strlen(s_b) + strlen(s_c) + strlen(s_d)) / 4.0
+		cout << "N —Å—Ä–µ–¥–Ω–µ–µ=" << (strlen(s_a) + strlen(s_b) + strlen(s_c) + strlen(s_d)) / 4.0
 			<< " \n";
 
 		init(s_a, &a1);
@@ -329,7 +906,29 @@ int main()
 		init(s_c, &c4);
 		init(s_d, &d4);
 
-		unsigned __int64 t1, t2;
+		a5 = s_a;
+		b5 = s_b;
+		c5 = s_c;
+		d5 = s_d;
+
+		a6 = s_a;
+		b6 = s_b;
+		c6 = s_c;
+		d6 = s_d;
+
+		a7 = s_a;
+		b7 = s_b;
+		c7 = s_c;
+		d7 = s_d;
+
+		a8 = s_a;
+		b8 = s_b;
+		c8 = s_c;
+		d8 = s_d;
+
+		processing(a6, b6, c6, d6, e6);
+
+		unsigned __int64 t1, t2, t3, t4;
 
 		cout << "A:";
 		put(a1);
@@ -349,11 +948,16 @@ int main()
 		}
 		t2 = time_req();
 
-		cout << "Ã‡ÒÒË‚:\n";
-		cout << "E1:";
-		put(e1);
-		cout << "“‡ÍÚÓ‚ Á‡ " << REP1 << " ÔÓ‚ÚÓÂÌËÈ:" << t2 - t1 << "\n";
-		cout << "“‡ÍÚÓ‚ Ì‡ 1 ÔÓ‚ÚÓÂÌËÂ:" << (t2 - t1) / (float)REP1 << "\n\n";
+		t3 = time_req();
+		for (i = 0; i < REP1; i++)
+		{
+			processing(a5, b5, c5, d5, e5);
+		}
+		t4 = time_req();
+
+
+		cout << "\n–ú–∞—Å—Å–∏–≤(–ü–æ–≤—Ç–æ—Ä–µ–Ω–∏–π:" << REP1 << "):\n";
+		cout << "–¢–∞–∫—Ç–æ–≤ –Ω–∞ 1 –∑–∞–ø—É—Å–∫:" << (t2 - t1) / (float)REP1 << "(–±–µ–∑ –∫–ª–∞—Å—Å–æ–≤), " << (t4 - t3) / (float)REP1 << "(—Å –∫–ª–∞—Å—Å–∞–º–∏)\n";
 
 		t1 = time_req();
 		for (i = 0; i < REP2; i++)
@@ -363,32 +967,43 @@ int main()
 		}
 		t2 = time_req();
 
+		t3 = time_req();
+		for (i = 0; i < REP2; i++)
+		{
+			processing(a6, b6, c6, d6, e6);
+		}
+		t4 = time_req();
+
 		processing(a2, b2, c2, d2, e2);
 
-		cout << "—ÔËÒÓÍ:\n";
-		cout << "E2:";
-		put(e2);
 		freesp(a2);
 		freesp(b2);
 		freesp(c2);
 		freesp(d2);
 		freesp(e2);
-		cout << "“‡ÍÚÓ‚ Á‡ " << REP2 << " ÔÓ‚ÚÓÂÌËÈ:" << t2 - t1 << "\n";
-		cout << "“‡ÍÚÓ‚ Ì‡ 1 ÔÓ‚ÚÓÂÌËÂ:" << (t2 - t1) / (float)REP2 << "\n\n";
+		cout << "\n–°–ø–∏—Å–æ–∫(–ü–æ–≤—Ç–æ—Ä–µ–Ω–∏–π:" << REP2 << "):\n";
+		cout << "–¢–∞–∫—Ç–æ–≤ –Ω–∞ 1 –∑–∞–ø—É—Å–∫:" << (t2 - t1) / (float)REP2 << "(–±–µ–∑ –∫–ª–∞—Å—Å–æ–≤), " << (t4 - t3) / (float)REP2 << "(—Å –∫–ª–∞—Å—Å–∞–º–∏)\n";
 
 		t1 = time_req();
 		for (i = 0; i < REP3; i++)
 		{
+			if (i % (REP4 / 10) == 0)
+				cout << " \b";
 			e3.a[0] = 0;
 			processing(a3, b3, c3, d3, e3);
 		}
 		t2 = time_req();
+		i=e3.a[0]%10;
+		cout << i << "\b ";
+		t3 = time_req();
+		for (i = 0; i < REP3; i++)
+		{
+			processing(a7, b7, c7, d7, e7);
+		}
+		t4 = time_req();
 
-		cout << "”ÌË‚ÂÒÛÏ:\n";
-		cout << "E3:";
-		put(e3);
-		cout << "“‡ÍÚÓ‚ Á‡ " << REP3 << " ÔÓ‚ÚÓÂÌËÈ:" << t2 - t1 << "\n";
-		cout << "“‡ÍÚÓ‚ Ì‡ 1 ÔÓ‚ÚÓÂÌËÂ:" << (t2 - t1) / (float)REP3 << "\n\n";
+		cout << "\n–£–Ω–∏–≤–µ—Ä—Å—É–º(–ü–æ–≤—Ç–æ—Ä–µ–Ω–∏–π:" << REP3 << "):\n";
+		cout << "–¢–∞–∫—Ç–æ–≤ –Ω–∞ 1 –∑–∞–ø—É—Å–∫:" << (t2 - t1) / (float)REP3 << "(–±–µ–∑ –∫–ª–∞—Å—Å–æ–≤), " << (t4 - t3) / (float)REP3 << "(—Å –∫–ª–∞—Å—Å–∞–º–∏)\n";
 
 		t1 = time_req();
 		for (i = 0; i < REP4; i++)
@@ -400,14 +1015,21 @@ int main()
 		}
 		t2 = time_req();
 
-		cout << "Ã‡¯ËÌÌÓÂ ÒÎÓ‚Ó:\n";
-		cout << "E4:";
-		put(e4);
-		cout << "“‡ÍÚÓ‚ Á‡ " << REP4 << " ÔÓ‚ÚÓÂÌËÈ:" << t2 - t1 << "\n";
-		cout << "“‡ÍÚÓ‚ Ì‡ 1 ÔÓ‚ÚÓÂÌËÂ:" << (t2 - t1) / (float)REP4 << "\n\n";
+		t3 = time_req();
+		for (i = 0; i < REP3; i++)
+		{
+			if (i % (REP4 / 10) == 0)
+				cout << " \b";
+			processing(a8, b8, c8, d8, e8);
+		}
+		t4 = time_req();
+
+		cout << "\n–ú–∞—à–∏–Ω–Ω–æ–µ —Å–ª–æ–≤–æ(–ü–æ–≤—Ç–æ—Ä–µ–Ω–∏–π:" << REP4 << "):\n";
+		cout << "–¢–∞–∫—Ç–æ–≤ –Ω–∞ 1 –∑–∞–ø—É—Å–∫:" << (t2 - t1) / (float)REP4 << "(–±–µ–∑ –∫–ª–∞—Å—Å–æ–≤), " << (t4 - t3) / (float)REP4 << "(—Å –∫–ª–∞—Å—Å–∞–º–∏)\n";
 
 
-		cout << "—‰ÂÎ‡Ú¸ Â˘∏ ÚÂÒÚ?(y/n)";
+		
+		cout << "–°–¥–µ–ª–∞—Ç—å –µ—â—ë —Ç–µ—Å—Ç?(y/n)";
 
 		do
 		{
@@ -417,6 +1039,28 @@ int main()
 	} while (ch == 'y' || ch == 'Y');
 
 }
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void processing(SET1 &_a, SET1 &_b, SET1 &_c, SET1 &_d, SET1 &_e)
+{
+	_e = (_a & _b) / (_c) | _d;
+}
+void processing(SET2 &_a, SET2 &_b, SET2 &_c, SET2 &_d, SET2 &_e)
+{
+	_e = (_a & _b) / _c | _d;
+}
+void processing(SET3 &_a, SET3 &_b, SET3 &_c, SET3 &_d, SET3 &_e)
+{
+	_e = (_a & _b) / (_c) | _d;
+}
+void processing(SET4 &_a, SET4 &_b, SET4 &_c, SET4 &_d, SET4 &_e)
+{
+	_e = (_a & _b) / (_c) | _d;
+}
+
 
 void processing(DATA1 &_a, DATA1 &_b, DATA1 &_c, DATA1 &_d, DATA1 &_e)
 {
@@ -441,7 +1085,6 @@ void processing(DATA1 &_a, DATA1 &_b, DATA1 &_c, DATA1 &_d, DATA1 &_e)
 		if (*s1 == *s2)
 		{
 			*s1 = '-';
-			r++;
 		}
 
 	r = 0;
@@ -604,15 +1247,3 @@ void processing(DATA4 &_a, DATA4 &_b, DATA4 &_c, DATA4 &_d, DATA4 &_e)
 
 	_e.a = ((_a.a & _b.a) & (~_c.a)) | _d.a;
 }
-
-
-
-
-
-
-
-
-
-
-
-
