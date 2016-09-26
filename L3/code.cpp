@@ -31,6 +31,7 @@ class TREE
 	int depth;	// узлов без сыновей
 	NODE * root;	// указатель на вершину дерева
 public:
+	void InTREE(char*);	// создание дерева
 	void GenTREE(int max_depth);	// создание дерева
 	void mark();
 	int proc();
@@ -163,18 +164,15 @@ void TREE::OutTREE()
 
 }
 
-void TREE::GenTREE(int n)
+void TREE::InTREE(char *s)
 {
 	N = 0;
 	depth = 0;
-	if (n < 0)return;
-	if (n == 0)
-		root = new NODE();
 
-	NODE ** arr_n = new NODE*[n+1];
-	int * arr_s = new int[n+1];//0-left 1-right
+	NODE ** arr_n = new NODE*[100 + 1];
+	int * arr_s = new int[100 + 1];//0-left 1-right
 
-	int l=0;
+	int l = 0;
 	bool b = 0;
 
 	root = new NODE();
@@ -183,11 +181,14 @@ void TREE::GenTREE(int n)
 
 	for (; b == 0;)
 	{
-		if (rand() % n < n - l)
+		if (*s == 0)
+			return;
+
+		if (*(s++)=='1')
 		{
 			l++;
 			if (l>depth)depth = l;
-			if (arr_s[l-1] == 0)
+			if (arr_s[l - 1] == 0)
 			{
 				arr_n[l] = new NODE();
 				arr_n[l - 1]->pl = arr_n[l];
@@ -228,22 +229,98 @@ void TREE::GenTREE(int n)
 
 
 
-	delete []arr_n;
-	delete []arr_s;
+	delete[]arr_n;
+	delete[]arr_s;
+}
+
+
+void TREE::GenTREE(int n)
+{
+	N = 0;
+	depth = 0;
+	if (n < 0)return;
+	if (n == 0)
+		root = new NODE();
+
+	NODE ** arr_n = new NODE*[n + 1];
+	int * arr_s = new int[n + 1];//0-left 1-right
+
+	int l = 0;
+	bool b = 0;
+
+	root = new NODE();
+	arr_n[0] = root;
+	arr_s[0] = 0;
+
+	for (; b == 0;)
+	{
+		if (rand() % n < n - l)
+		{
+			l++;
+			if (l>depth)depth = l;
+			if (arr_s[l - 1] == 0)
+			{
+				arr_n[l] = new NODE();
+				arr_n[l - 1]->pl = arr_n[l];
+				arr_s[l] = 0;
+			}
+			else
+			{
+				arr_n[l] = new NODE();
+				arr_n[l - 1]->pr = arr_n[l];
+				arr_s[l] = 0;
+			}
+		}
+		else
+		{
+			if (arr_s[l] == 0)
+			{
+				arr_s[l] = 1;
+			}
+			else
+			{
+				if (arr_n[l]->pl == nullptr)
+				{
+					N++;
+				}
+				while (l >= 0 && arr_s[l] == 1)
+					l--;
+				if (l < 0)
+				{
+					b = 1;
+				}
+				else
+				{
+					arr_s[l] = 1;
+				}
+			}
+		}
+	}
+
+
+
+	delete[]arr_n;
+	delete[]arr_s;
 }
 
 int main()
 {
+
 	setlocale(0,"RU");
 	srand(time(nullptr));
+
 
 	TREE l;
 
 	char ch;
+	char buf[70];
 
 	do{
 		system("cls");
-		l.GenTREE(8);
+		l.GenTREE(9);
+
+		//gets_s(buf, 70);
+		//l.InTREE(buf);
 
 		l.mark();
 
