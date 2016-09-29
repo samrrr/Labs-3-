@@ -361,17 +361,17 @@ public:
 
 };
 
-class SET2 //ñïèñîê
+class SET2
 {
 private:
-	//int id;
+	int id;
 	SP_EL *spis;
 public:
 
 
 	~SET2()
 	{
-		//printf("Деструктор(%i)\n",id);
+		printf("Деструктор(%i)\n",id);
 		SP_EL *p = spis;
 		while (p)
 		{
@@ -383,14 +383,14 @@ public:
 
 	SET2()
 	{
-		//id = rand() % 10000;
-		//printf("Конструктор(%i)\n", id);
+		id = rand() % 10000;
+		printf("Конструктор(%i)\n", id);
 		spis = 0;
 	}
 	void init(char *_s)
 	{
-		//id = rand() % 10000;
-		//printf("Инициализация от строки(%i)\n", id);
+		id = rand() % 10000;
+		printf("Инициализация от строки(%i)\n", id);
 
 		int ais[N_CH];
 		SP_EL *p;
@@ -419,7 +419,7 @@ public:
 	}
 	SET2(char *_s)
 	{
-		//printf("Конструктор от строки\n");
+		printf("Конструктор от строки\n");
 		init(_s);
 	}
 	void put()
@@ -434,7 +434,7 @@ public:
 
 	const SET2& operator= (const SET2 &_a)
 	{
-		//printf("=(%i)\n",_a.id);
+		printf("=(%i)\n",_a.id);
 		SP_EL *p;
 
 		p = spis;
@@ -464,10 +464,18 @@ public:
 
 		return *this;
 	}
+	SET2(SET2 &&_a)
+	{
+		spis = _a.spis;
+		id = _a.id;
+		_a.spis = nullptr;
+		printf("Перемещение(%i) id копии(%i)\n", _a.id, id);
+
+	}
 	SET2(const SET2 &_a)
 	{
-		//id = rand() % 10000;
-		//printf("Создание копии(%i) id копии(%i)\n",_a.id, id);
+		id = rand() % 10000;
+		printf("Создание копии(%i) id копии(%i)\n", _a.id, id);
 		if (_a.spis == nullptr)
 		{
 			spis = nullptr;
@@ -479,7 +487,7 @@ public:
 
 		spis = new SP_EL;
 		spis->ch = el->ch;
-		l=spis;
+		l = spis;
 		el = el->n;
 
 		for (; el; el = el->n)
@@ -494,7 +502,7 @@ public:
 	}
 	friend SET2 operator & (const SET2 &_a, const SET2 &_b)
 	{
-		//printf("& (%i)&(%i)\n", _a.id, _b.id);
+		printf("& (%i)&(%i)\n", _a.id, _b.id);
 		SET2 c;
 
 		SP_EL *p;
@@ -524,7 +532,7 @@ public:
 	}
 	friend SET2 operator | (const SET2 &_a, const SET2 &_b)
 	{
-		//printf("| (%i)|(%i)\n", _a.id, _b.id);
+		printf("| (%i)|(%i)\n", _a.id, _b.id);
 		SET2 c;
 
 		SP_EL *p1 = _a.spis, *p2 = _b.spis;
@@ -580,7 +588,7 @@ public:
 
 	friend SET2 operator / (const SET2 &_a,const SET2 &_b)
 	{
-		//printf("/ (%i)/(%i)\n", _a.id, _b.id);
+		printf("/ (%i)/(%i)\n", _a.id, _b.id);
 		SET2 c(_a);
 
 		SP_EL *p;
@@ -612,7 +620,7 @@ public:
 
 };
 
-class SET3 //þíèâåðñóì
+class SET3 
 {
 private:
 	bool a[N_CH];
@@ -923,8 +931,10 @@ int main()
 		c8 = s_c;
 		d8 = s_d;
 
-		processing(a6, b6, c6, d6, e6);
+		cout << "\n\n";
 
+		processing(a6, b6, c6, d6, e6);
+		system("pause");
 		unsigned __int64 t1, t2, t3, t4;
 
 		cout << "A:";

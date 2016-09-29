@@ -317,7 +317,7 @@ int main()
 
 	do{
 		system("cls");
-		l.GenTREE(9);
+		l.GenTREE(6);
 
 		//gets_s(buf, 70);
 		//l.InTREE(buf);
