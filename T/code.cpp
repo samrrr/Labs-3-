@@ -4,6 +4,7 @@
 #include <iostream>
 #include <queue>
 #include <deque>
+#include <list>
 
 
 using namespace std;
@@ -12,20 +13,22 @@ using namespace std;
 
 class GRAPH
 {
-public:
 	int or;//0-неориентированный 1-ориентированный
 	int n;
 	char **a;
+public:
 	GRAPH(int _n);
 	GRAPH(const GRAPH &_a);
 	GRAPH operator =(const GRAPH &_a);
 	void put();
 	string get_kom_sv();
 	friend void gen_by_kom(string& s);
+	int getN(){ return n; }
+	bool isOr(){ return or; }
+	char* operator[](const int _i);
 	//GRAPH operator &();
 	//friend GRAPH operator &(const GRAPH &_a, const GRAPH &_b);
 };
-
 
 string GRAPH::get_kom_sv()
 {
@@ -278,6 +281,71 @@ public:
 
 int main()
 {
+
+
+	/** /
+	int a(0), b(0);
+	long double u = 1 ;
+
+	int arr[100];
+	int buf[7];//(номер тарелки для пирожнного)
+
+	for (int i = 0; i < 100; i++)
+		arr[i] = 0;
+
+	for (int i = 0; i < 7; i++)
+		buf[i] = 0;
+
+	while (buf[6]==0)
+	{
+		buf[0]++;
+		for (int i = 0; i < 6; i++)
+			if (buf[i] == 3)
+			{
+				buf[i] = 0;
+				buf[i+1]++;
+			}
+
+		int buf1[3];//(тарелки 1-есть пир. 0-нет)
+		for (int o = 0; o < 3; o++)
+			buf1[o] = 0;
+
+		for (int o = 0; o < 6; o++)
+			buf1[buf[o]] = 1;
+
+		if (buf1[0] == 1 && buf1[1] == 1 && buf1[2] == 1)
+			arr[1]++;
+		arr[0]++;
+	}
+	cout << arr[0] << " " << arr[1];
+	system("pause");
+	/**/
+	
+	/**/
+	int arr[100];
+
+	for (int i = 0; i < 100; i++)
+		arr[i] = 0;
+
+	list <string>all;
+
+	for (int i=0;i<1000000;i++)
+	{
+
+		string result = "";
+		for (int cake = 0; cake < 6; cake++)
+		{
+			int plate = rand() % 3;
+			result += plate;
+		}
+
+
+
+	}
+
+	/**/
+
+	/** /
 	GRAPH a(10);
 
 	cout << a.get_kom_sv().data();
@@ -287,6 +355,6 @@ int main()
 	a.put();
 
 	system("pause");
-
+	/**/
 }
 
