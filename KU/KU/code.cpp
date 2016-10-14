@@ -21,9 +21,10 @@ using namespace std;
 
 #pragma intrinsic(__rdtsc)
 
+
+
 class GRAPH
 {
-	int or;//0-неориентированный 1-ориентированный
 	int n;
 	char **a;
 public:
@@ -32,10 +33,61 @@ public:
 	GRAPH operator =(const GRAPH &_a);
 	void put();
 	int getN(){ return n; }
-	bool isOr(){ return or; }
 	char* operator[](const int _i);
 	string get_cycles_el();
+	void remove_point(int);
 };
+
+void GRAPH::remove_point(int _i)
+{
+	if (_i < 0 || _i >= n)
+		return;
+
+	delete[] a[_i];
+
+	a[_i] = a[n - 1];
+	
+	n--;
+	
+	for (int i = 0; i < n-1;i++)
+	{
+		int offs=0;
+		for (int r = 1; r < a[i][0]; i++)
+		{
+			if (a[i][r]==_i)
+			{
+				offs++;
+			}
+			else
+				a[i][r-offs] = a[i][r];
+		}
+		if (offs > 0)
+		{
+			a[i][0] -= offs;
+
+			char *arr;
+
+			arr = new char[a[i][0]];
+
+			for (int r = 1; r < a[i][0]; i++)
+			{
+				arr[r] = a[i][r];
+			}
+			delete[] a[i];
+			a[i] = arr;
+		}
+	}
+
+	char **l_a;
+	l_a = new char*[n - 1];
+	for (int i = 0; i < n - 1; i++)
+		l_a[i] = a[i];
+
+	n--;
+	delete []a;
+	a = l_a;
+
+}
 
 char* GRAPH::operator[](const int _i)
 {
@@ -54,14 +106,13 @@ GRAPH GRAPH::operator = (const GRAPH &_a)
 	delete[] a;
 
 	n = _a.n;
-	or = _a.or;
 
 	a = new char*[n];
 	for (int i = 0; i < n; i++)
-		a[i] = new char[n];
+		a[i] = new char[_a.a[i][0]];
 
 	for (int i = 0; i < n; i++)
-		for (int r = 0; r < n; r++)
+		for (int r = 0; r < _a.a[i][0]; r++)
 			a[i][r] = _a.a[i][r];
 
 	return *this;
@@ -74,14 +125,32 @@ GRAPH::GRAPH(int _n = 0)
 		n = 0;
 		return;
 	}
-	or = 0;
 	n = _n;
 	a = new char*[n];
+
+	char *arr;
+
+	arr = new char[n];
+
 	for (int i = 0; i < n; i++)
-		a[i] = new char[n];
-	for (int i = 0; i < n; i++)
+	{
+		int o = 0;
 		for (int r = 0; r < n; r++)
-			a[i][r] = rand() % 6 <1;
+			if (rand() % 6 < 1)
+			{
+				arr[o] = r;
+				o++;
+			}
+
+		a[i] = new char[o + 1];
+		a[i][0] = o + 1;
+
+		for (int r = 0; r < o; r++)
+		{
+			a[i][r + 1] = arr[r];
+		}
+	}
+	delete []arr;
 }
 
 GRAPH::GRAPH(const GRAPH &_a)
@@ -89,27 +158,27 @@ GRAPH::GRAPH(const GRAPH &_a)
 	n = _a.n;
 	a = new char*[n];
 	for (int i = 0; i < n; i++)
-		a[i] = new char[n];
+		a[i] = new char[_a.a[i][0]];
 	for (int i = 0; i < n; i++)
-		for (int r = 0; r < n; r++)
+		for (int r = 0; r < _a.a[i][0]; r++)
 			a[i][r] = _a.a[i][r];
 }
 
 void GRAPH::put()
 {
-	printf("   ");
-	for (int r = 0; r < n; r++)
-		printf("%3i", r);
-	cout << endl;
-	for (int r = -1; r < n; r++)
-		printf("---");
+	//printf("   ");
+	//for (int r = 0; r < n; r++)
+	//	printf("%3i", r);
+	//cout << endl;
+	//for (int r = -1; r < n; r++)
+	//	printf("---");
 
 	cout << endl;
 
 	for (int i = 0; i < n; i++)
 	{
 		printf("%3i| ", i);
-		for (int r = 0; r < n; r++)
+		for (int r = 1; r < a[i][0]; r++)
 			printf("%i  ", (int)a[i][r]);
 		cout << endl;
 	}
@@ -119,98 +188,65 @@ string GRAPH::get_cycles_el()
 {
 	string res = "";
 
-	vector<int> used;
-	vector <int> cyc_ray;
+	vector <int> used;
+	vector <int> vertex_ray;
+	vector <int> id_ray;
+
+	GRAPH gr = *this;
+	
+	//grdel
 
 	used.resize(n + 3);
-	cyc_ray.resize(n + 3);
+	vertex_ray.resize(n + 3);
+	id_ray.resize(n + 3);
 
 	bool b = 1;
 
-	cyc_ray[0] = -1;
+	int k;
 
-	if (cyc_ray[0] == -1)
-	{
-		cyc_ray[0] = 0;
-
-		bool b1 = 1;
-		int k = 0;
-		while (b1)
-		{
-			int d = -1;
-			for (int i = 0; i<n; i++)
-				if (a[cyc_ray[k]][i] && used[i] == 0)
-				{
-					d = i;
-					i = n;
-				}
-
-
-			k++;
-			cyc_ray[k] = d;
-			if (d != -1)
-			{
-				used[d] = 1;
-			}
-			else
-			{
-				b1 = 0;
-			}
-			if (k>0 && cyc_ray[k] == cyc_ray[0])
-			{
-				b1 = 0;
-				cyc_ray[k + 1] = -1;
-			}
-		}
-
-		if (cyc_ray[k] == cyc_ray[0] && k > 0)
-		{
-			for (int gr = 0; cyc_ray[gr] != -1; gr++)
-				res = res + (char)(cyc_ray[gr] + '0');
-			res = res + '\n';
-		}
-		//for (int gr = 0; cyc_ray[gr] != -1; gr++)
-		//	cout << cyc_ray[gr];
-		//cout << endl;
-
-	}
-
+	k = 1;
+	id_ray[0] = -1;
+	vertex_ray[0] = 0;
+	
 
 	while (b)
 	{
-		int k;
+		//while (cyc_ray[k] != -1)
+		//	k++;
 
-		k = 0;
-		while (cyc_ray[k] != -1)
-			k++;
-
+		k++;
 		do
 		{
 			k--;
-			used[cyc_ray[k]] = 0;
+			used[vertex_ray[k]] = 0;
 			do
 			{
-				cyc_ray[k]++;
-			} while (cyc_ray[k] < n && k>0 && (a[cyc_ray[k - 1]][cyc_ray[k]] == 0 || used[cyc_ray[k]] == 1));
+				id_ray[k]++;
 
-		} while (k > 0 && cyc_ray[k] == n);
+			} while (k > 0 && id_ray[k] < gr.a[vertex_ray[k - 1]][0] && gr.a[vertex_ray[k - 1]][id_ray[k]] <= vertex_ray[0] && used[gr.a[vertex_ray[k - 1]][id_ray[k]]] == 1);
+
+
+		} while (k > 0 && !(gr.a[vertex_ray[k - 1]][id_ray[k]] <= vertex_ray[0] && id_ray[k] < gr.a[vertex_ray[k - 1]][0]));
 
 		if (k > 0)
-			used[cyc_ray[k]] = 1;
-
-		cyc_ray[k + 1] = -1;
-
-
-		if (cyc_ray[0] != n)
 		{
-			if (cyc_ray[0] != cyc_ray[k] || k == 0)
+			vertex_ray[k] = gr.a[vertex_ray[k - 1]][id_ray[k]];
+			used[vertex_ray[k]] = 1;
+		}
+		else
+			vertex_ray[0] = id_ray[0];
+		
+
+		if (vertex_ray[0] != n)
+		{
+			if (vertex_ray[0] != vertex_ray[k] || k == 0)
 			{
-				bool b1 = 1;
-				while (b1)
+				int b1 = 0;
+				do
 				{
 					int d = -1;
-					for (int i = 0; i < n; i++)
-						if (a[cyc_ray[k]][i] && used[i] == 0)
+					for (int i = 1; i < gr.a[vertex_ray[k]][0]; i++)
+						if (used[gr.a[vertex_ray[k]][i]] == 0 && gr.a[vertex_ray[k]][i] <= vertex_ray[0])
 						{
 							d = i;
 							i = n;
@@ -218,29 +254,31 @@ string GRAPH::get_cycles_el()
 
 
 					k++;
-					cyc_ray[k] = d;
+					id_ray[k] = d;
 					if (d != -1)
 					{
-						used[d] = 1;
+						vertex_ray[k] = gr.a[vertex_ray[k - 1]][d];
+						used[vertex_ray[k]] = 1;
+						if (k>0 && vertex_ray[k] == vertex_ray[0])
+						{
+							b1 = 1;
+						}
 					}
 					else
 					{
-						b1 = 0;
+						vertex_ray[k] = -1;
+						b1 = 1;
+						k--;
 					}
 
-					if (k>0 && cyc_ray[k] == cyc_ray[0])
-					{
-						b1 = 0;
-						cyc_ray[k + 1] = -1;
-					}
 
-				}
+				} while (b1==0);
 			}
 
-			if (cyc_ray[k] == cyc_ray[0] && k > 0)
+			if (k > 0 && vertex_ray[k] == vertex_ray[0])
 			{
-				for (int gr = 0; cyc_ray[gr] != -1; gr++)
-					res = res + (char)(cyc_ray[gr] + '0');
+				for (int gr = 0; gr<=k; gr++)
+					res = res + (char)(vertex_ray[gr] + '0');
 				res = res + '\n';
 			}
 
@@ -297,7 +335,7 @@ private:
 		WPARAM	wParam,			// Additional Message Information
 		LPARAM	lParam)			// Additional Message Information
 	{
-		cout << uMsg << endl;
+		//cout << uMsg << endl;
 		switch (uMsg)									// Check For Windows Messages
 		{
 		case WM_ACTIVATE:							// Watch For Window Activate Message
@@ -336,7 +374,7 @@ private:
 
 		case WM_KEYDOWN:							// Is A Key Being Held Down?
 		{
-			cout << wParam<<endl;
+			//cout << wParam<<endl;
 			keys[wParam] = TRUE;					// If So, Mark It As TRUE
 			if (wParam == 910)
 			{
@@ -662,11 +700,11 @@ public:
 
 		active = TRUE;
 
-		//fullscreen = false;
-		//CreateGLWindow("NeHe's OpenGL Framework", 640, 480, 16, fullscreen);
+		fullscreen = false;
+		CreateGLWindow("NeHe's OpenGL Framework", 640, 480, 16, fullscreen);
 
-		fullscreen = true;
-		CreateGLWindow("NeHe's OpenGL Framework", GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN), 16, fullscreen);
+		//fullscreen = true;
+		//CreateGLWindow("NeHe's OpenGL Framework", GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN), 16, fullscreen);
 
 
 		return 1;
@@ -767,14 +805,16 @@ int main()
 
 
 		w.draw();
+		//int rr = rand() % 1000;
+		//cout << rr << endl;
+		//srand(rr);
+		GRAPH a(9);
 
-		//GRAPH a(9);
+		a.put();
 
-		//a.put();
+		cout<<a.get_cycles_el().data();
 
-		//cout<<a.get_cycles_el().data();
-
-		//Sleep(1000);
+		Sleep(1000);
 	}
 }
 
