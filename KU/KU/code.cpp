@@ -264,6 +264,7 @@ string GRAPH::get_cycles_el()
 class OPENGL_WINDOW
 {
 private:
+	
 	HDC			hDC = NULL;		// Private GDI Device Context
 	HGLRC		hRC = NULL;		// Permanent Rendering Context
 	HWND		hWnd = NULL;		// Holds Our Window Handle
@@ -272,6 +273,8 @@ private:
 	bool	keys[256];			// Array Used For The Keyboard Routine
 	bool	active = TRUE;		// Window Active Flag Set To TRUE By Default
 	bool	fullscreen = TRUE;	// Fullscreen Flag Set To Fullscreen Mode By Default
+
+	bool enabled;
 
 	bool initialise;
 
@@ -294,6 +297,7 @@ private:
 		WPARAM	wParam,			// Additional Message Information
 		LPARAM	lParam)			// Additional Message Information
 	{
+		cout << uMsg << endl;
 		switch (uMsg)									// Check For Windows Messages
 		{
 		case WM_ACTIVATE:							// Watch For Window Activate Message
@@ -304,10 +308,12 @@ private:
 			}
 			else
 			{
+				disable();
+				enable();
 				active = FALSE;						// Program Is No Longer Active
 			}
 
-			return 0;								// Return To The Message Loop
+			return 0;
 		}
 
 		case WM_SYSCOMMAND:							// Intercept System Commands
@@ -316,34 +322,48 @@ private:
 			{
 			case SC_SCREENSAVE:					// Screensaver Trying To Start?
 			case SC_MONITORPOWER:				// Monitor Trying To Enter Powersave?
-				return 0;							// Prevent From Happening
+				//rly this your problem....
+				return 0;
 			}
-			break;									// Exit
+			break;
 		}
 
 		case WM_CLOSE:								// Did We Receive A Close Message?
 		{
-			PostQuitMessage(0);						// Send A Quit Message
-			return 0;								// Jump Back
+			disable();
+			return 0;
 		}
 
 		case WM_KEYDOWN:							// Is A Key Being Held Down?
 		{
+			cout << wParam<<endl;
 			keys[wParam] = TRUE;					// If So, Mark It As TRUE
-			return 0;								// Jump Back
+			if (wParam == 910)
+			{
+				disable();
+				enable();
+			}
+			return 0;
+			
+		}
+		case WM_ACTIVATEAPP:
+		{
+			//cout << "app\n";
+			break;
 		}
 
 		case WM_KEYUP:								// Has A Key Been Released?
 		{
 			keys[wParam] = FALSE;					// If So, Mark It As FALSE
-			return 0;								// Jump Back
+			return 0;
 		}
 
 		case WM_SIZE:								// Resize The OpenGL Window
 		{
 			ReSizeGLScene(LOWORD(lParam), HIWORD(lParam));  // LoWord=Width, HiWord=Height
-			return 0;								// Jump Back
+			break;
 		}
+
 		}
 
 		// Pass All Unhandled Messages To DefWindowProc
@@ -363,7 +383,7 @@ private:
 		glLoadIdentity();									// Reset The Projection Matrix
 
 		// Calculate The Aspect Ratio Of The Window
-		gluPerspective(90.0f, (GLfloat)width / (GLfloat)height, 0.1f, 1000.0f);
+		gluPerspective(45.0f, (GLfloat)width / (GLfloat)height, 0.1f, 1000.0f);
 
 		glMatrixMode(GL_MODELVIEW);							// Select The Modelview Matrix
 		glLoadIdentity();									// Reset The Modelview Matrix
@@ -607,12 +627,11 @@ private:
 public:
 	OPENGL_WINDOW()
 	{
-		initialise = 0;
+		enabled = 0;
 	}
-	bool init()
+	~OPENGL_WINDOW()
 	{
-
-		return true;
+		disable();
 	}
 
 	void draw()
@@ -632,24 +651,97 @@ public:
 
 	bool enable()
 	{
+		if (enabled)
+			return 0;
+
+		enabled = 1;
+
 		hDC = NULL;
 		hRC = NULL;
 		hWnd = NULL;
 
 		active = TRUE;
-		fullscreen = false;
 
-		CreateGLWindow("NeHe's OpenGL Framework", 640, 480, 16, fullscreen);
+		//fullscreen = false;
+		//CreateGLWindow("NeHe's OpenGL Framework", 640, 480, 16, fullscreen);
+
+		fullscreen = true;
+		CreateGLWindow("NeHe's OpenGL Framework", GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN), 16, fullscreen);
+
 
 		return 1;
 	}
 	bool disable()
 	{
+		if (!enabled)
+			return 0;
+		enabled = 0;
 		KillGLWindow();
 		return 1;
 	}
 	
 };
+
+struct COLOR
+{
+	float r, g, b, a;
+};
+
+
+void put_icon()
+{
+	glDisable(GL_DEPTH_TEST);
+	static int angle = 0;
+	static int old_clock = clock();
+
+	static COLOR c1, c2, c3;
+	static COLOR c1n, c2n, c3n;
+	static COLOR c1o, c2o, c3o;
+	static float c1t,c2t,c3t;
+
+
+	int diff = old_clock - clock();
+	old_clock = clock();
+
+	angle = (angle + (diff) / 10) % 360;
+
+	glPushMatrix();
+	glRotatef(angle, 0, 1, 0);
+
+	//glColor3f((rand() % 10) / 10.0, (rand() % 10) / 10.0, (rand() % 10) / 10.0);
+	glColor3f(0.5,0.5,0.5);
+	glBegin(GL_POLYGON);
+	glVertex3f(0,1, 0);
+	glVertex3f(-1,-1, 0);
+	glVertex3f(1,-1, 0);
+	glEnd();
+
+	//glColor3f((rand() % 10) / 10.0, (rand() % 10) / 10.0, (rand() % 10) / 10.0);
+	glColor3f(0.8, 0.5, 0.5);
+	for (int i = -90; i < 90; i += 10)
+	{
+		glBegin(GL_POLYGON);
+		glVertex3f(i / 180.0, cos(i/180.0*3.1415926)/4, 0);
+		glVertex3f(i / 180.0, -cos(i / 180.0 * 3.1415926) / 4, 0);
+		glVertex3f((i + 10) / 180.0, -cos((i + 10) / 180.0 * 3.1415926) / 4, 0);
+		glVertex3f((i + 10) / 180.0, cos((i + 10) / 180.0 * 3.1415926) / 4, 0);
+		glEnd();
+	}
+
+	//glColor3f((rand() % 10) / 10.0, (rand() % 10) / 10.0, (rand() % 10) / 10.0);
+	glColor3f(0.5, 0.0, 0.5);
+	for (int i = 0; i < 360; i += 10)
+	{
+		glBegin(GL_POLYGON);
+		glVertex3f(sin(i / 180.0*3.1415926) / 4, cos(i / 180.0*3.1415926) / 4, 0);
+		glVertex3f(sin((i + 10) / 180.0*3.1415926) / 4, cos((i + 10) / 180.0 * 3.1415926) / 4, 0);
+		glVertex3f(0,0, 0);
+		glEnd();
+	}
+
+	glPopMatrix();
+
+}
 
 int main()
 {
@@ -664,26 +756,23 @@ int main()
 		w.upd();
 
 
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
+		glLoadIdentity();									
+		glClearColor(0,0,0, 0.5f);
 
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	// Clear Screen And Depth Buffer
-		glLoadIdentity();									// Reset The Current Modelview Matrix
-		glClearColor((rand() % 10) / 10.0, (rand() % 10) / 10.0, (rand() % 10) / 10.0, 0.5f);
-
-		glBegin(GL_TRIANGLES);
-		glVertex3f(0.0f, 1.0f, -2.0f);  // Вверх
-		glVertex3f(-1.0f, -1.0f, -2.0f);  // Слева снизу
-		glVertex3f(1.0f, -1.0f, -2.0f);  // Справа снизу
-		glEnd();
-
+		glPushMatrix();
+		glTranslatef(0,0,-4);
+		put_icon();
+		glPopMatrix();
 
 
 		w.draw();
 
-		GRAPH a(9);
+		//GRAPH a(9);
 
-		a.put();
+		//a.put();
 
-		cout<<a.get_cycles_el().data();
+		//cout<<a.get_cycles_el().data();
 
 		//Sleep(1000);
 	}
