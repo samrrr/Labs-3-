@@ -9,6 +9,8 @@
 #include <queue>
 #include <deque>
 #include <list>
+#include <thread>
+#include <mutex>
 
 
 #pragma comment(lib, "opengl32.lib")
@@ -26,15 +28,15 @@ using namespace std;
 class GRAPH
 {
 	int n;
-	char **a;
+	int **a;
 public:
 	GRAPH(int _n);
 	GRAPH(const GRAPH &_a);
 	GRAPH operator =(const GRAPH &_a);
 	void put();
 	int getN(){ return n; }
-	char* operator[](const int _i);
-	string get_cycles_el();
+	int* operator[](const int _i);
+	queue <vector<int>> get_cycles_el();
 	void remove_point(int);
 };
 
@@ -65,9 +67,9 @@ void GRAPH::remove_point(int _i)
 		{
 			a[i][0] -= offs;
 
-			char *arr;
+			int *arr;
 
-			arr = new char[a[i][0]];
+			arr = new int[a[i][0]];
 
 			for (int r = 1; r < a[i][0]; i++)
 			{
@@ -78,8 +80,8 @@ void GRAPH::remove_point(int _i)
 		}
 	}
 
-	char **l_a;
-	l_a = new char*[n - 1];
+	int **l_a;
+	l_a = new int*[n - 1];
 	for (int i = 0; i < n - 1; i++)
 		l_a[i] = a[i];
 
@@ -89,7 +91,7 @@ void GRAPH::remove_point(int _i)
 
 }
 
-char* GRAPH::operator[](const int _i)
+int* GRAPH::operator[](const int _i)
 {
 	if (_i < 0 || _i >= n)
 		return NULL;
@@ -107,9 +109,9 @@ GRAPH GRAPH::operator = (const GRAPH &_a)
 
 	n = _a.n;
 
-	a = new char*[n];
+	a = new int*[n];
 	for (int i = 0; i < n; i++)
-		a[i] = new char[_a.a[i][0]];
+		a[i] = new int[_a.a[i][0]];
 
 	for (int i = 0; i < n; i++)
 		for (int r = 0; r < _a.a[i][0]; r++)
@@ -126,23 +128,23 @@ GRAPH::GRAPH(int _n = 0)
 		return;
 	}
 	n = _n;
-	a = new char*[n];
+	a = new int*[n];
 
-	char *arr;
+	int *arr;
 
-	arr = new char[n];
+	arr = new int[n];
 
 	for (int i = 0; i < n; i++)
 	{
 		int o = 0;
 		for (int r = 0; r < n; r++)
-			if (rand() % 6 < 1)
+			if (rand() % 6 < 10)
 			{
 				arr[o] = r;
 				o++;
 			}
 
-		a[i] = new char[o + 1];
+		a[i] = new int[o + 1];
 		a[i][0] = o + 1;
 
 		for (int r = 0; r < o; r++)
@@ -156,9 +158,9 @@ GRAPH::GRAPH(int _n = 0)
 GRAPH::GRAPH(const GRAPH &_a)
 {
 	n = _a.n;
-	a = new char*[n];
+	a = new int*[n];
 	for (int i = 0; i < n; i++)
-		a[i] = new char[_a.a[i][0]];
+		a[i] = new int[_a.a[i][0]];
 	for (int i = 0; i < n; i++)
 		for (int r = 0; r < _a.a[i][0]; r++)
 			a[i][r] = _a.a[i][r];
@@ -184,9 +186,9 @@ void GRAPH::put()
 	}
 }
 
-string GRAPH::get_cycles_el()
+queue <vector<int>> GRAPH::get_cycles_el()
 {
-	string res = "";
+	queue <vector<int>> res;
 
 	vector <int> used;
 	vector <int> vertex_ray;
@@ -277,14 +279,21 @@ string GRAPH::get_cycles_el()
 
 			if (k > 0 && vertex_ray[k] == vertex_ray[0])
 			{
+				vector <int> vec;
+				vec.resize(k+1);
 				for (int gr = 0; gr<=k; gr++)
-					res = res + (char)(vertex_ray[gr] + '0');
-				res = res + '\n';
+					vec[gr] = vertex_ray[gr];
+				res.push(vec);
 			}
-
-			//for (int gr = 0; cyc_ray[gr] != -1; gr++)
-			//	cout << cyc_ray[gr];
-			//cout << endl;
+			
+			/** /
+			if (rand() % 1000 == 0)
+			{
+				for (int gr = 0; gr <= k; gr++)
+					cout << (char)(vertex_ray[gr] + '0');
+				cout << endl;
+			}
+			/**/
 
 		}
 		else
@@ -297,7 +306,11 @@ string GRAPH::get_cycles_el()
 	return res;
 }
 
-
+struct W_MOUSE
+{
+	int x, y;
+	int mchl, mchr, mdol, mdor;
+};
 
 class OPENGL_WINDOW
 {
@@ -315,6 +328,11 @@ private:
 	bool enabled;
 
 	bool initialise;
+
+	int razokx;
+	int razoky;
+	float pers_angle;
+	W_MOUSE mouse;
 
 	//static LRESULT CALLBACK WinMessage(HWND _window, unsigned int _message, WPARAM _wParam, LPARAM _lParam);	
 	//LRESULT CALLBACK WinMessage(HWND _window, unsigned int _message, WPARAM _wParam, LPARAM _lParam);
@@ -398,9 +416,29 @@ private:
 
 		case WM_SIZE:								// Resize The OpenGL Window
 		{
+			razokx = LOWORD(lParam); razoky = HIWORD(lParam);
 			ReSizeGLScene(LOWORD(lParam), HIWORD(lParam));  // LoWord=Width, HiWord=Height
 			break;
 		}
+		
+		case WM_MOUSEMOVE:
+			mouse.x = LOWORD(lParam);
+			mouse.y = HIWORD(lParam);
+			break;
+		case WM_LBUTTONDOWN:
+			mouse.mdol = 1;
+			mouse.mchl = 1;
+			break;
+		case WM_LBUTTONUP:
+			mouse.mchl = 0;
+			break;
+		case WM_RBUTTONDOWN:
+			mouse.mdor = 1;
+			mouse.mchr = 1;
+			break;
+		case WM_RBUTTONUP:
+			mouse.mchr = 0;
+			break;
 
 		}
 
@@ -421,7 +459,7 @@ private:
 		glLoadIdentity();									// Reset The Projection Matrix
 
 		// Calculate The Aspect Ratio Of The Window
-		gluPerspective(45.0f, (GLfloat)width / (GLfloat)height, 0.1f, 1000.0f);
+		gluPerspective(60.0f, (GLfloat)width / (GLfloat)height, 1, 10000.0f);
 
 		glMatrixMode(GL_MODELVIEW);							// Select The Modelview Matrix
 		glLoadIdentity();									// Reset The Modelview Matrix
@@ -679,6 +717,8 @@ public:
 	}
 	void upd()
 	{
+		mouse.mdol = 0;
+		mouse.mdor = 0;
 		MSG msg;
 		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
@@ -702,12 +742,17 @@ public:
 
 		fullscreen = false;
 		CreateGLWindow("NeHe's OpenGL Framework", 640, 480, 16, fullscreen);
+		razokx = 640; razoky = 480;
 
 		//fullscreen = true;
 		//CreateGLWindow("NeHe's OpenGL Framework", GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN), 16, fullscreen);
 
 
 		return 1;
+	}
+	bool is_enabled()
+	{
+		return enabled;
 	}
 	bool disable()
 	{
@@ -717,7 +762,27 @@ public:
 		KillGLWindow();
 		return 1;
 	}
-	
+	int get_wx()
+	{
+		return razokx;
+	}
+	int get_wy()
+	{
+		return razoky;
+	}
+	float get_angle()
+	{
+		return 60;
+	}
+	const bool* get_keys()
+	{
+		return keys;
+	}
+	W_MOUSE get_mouse()
+	{
+		return mouse;
+	}
+
 };
 
 struct COLOR
@@ -729,33 +794,22 @@ struct COLOR
 void put_icon()
 {
 	glDisable(GL_DEPTH_TEST);
-	static int angle = 0;
-	static int old_clock = clock();
-
-	static COLOR c1, c2, c3;
-	static COLOR c1n, c2n, c3n;
-	static COLOR c1o, c2o, c3o;
-	static float c1t,c2t,c3t;
+	static float angle = 0;
 
 
-	int diff = old_clock - clock();
-	old_clock = clock();
-
-	angle = (angle + (diff) / 10) % 360;
+	angle += 1;
 
 	glPushMatrix();
 	glRotatef(angle, 0, 1, 0);
 
-	//glColor3f((rand() % 10) / 10.0, (rand() % 10) / 10.0, (rand() % 10) / 10.0);
-	glColor3f(0.5,0.5,0.5);
+	glColor3f((rand() % 10) / 10.0, (rand() % 10) / 10.0, (rand() % 10) / 10.0);
 	glBegin(GL_POLYGON);
 	glVertex3f(0,1, 0);
 	glVertex3f(-1,-1, 0);
 	glVertex3f(1,-1, 0);
 	glEnd();
 
-	//glColor3f((rand() % 10) / 10.0, (rand() % 10) / 10.0, (rand() % 10) / 10.0);
-	glColor3f(0.8, 0.5, 0.5);
+	glColor3f((rand() % 10) / 10.0, (rand() % 10) / 10.0, (rand() % 10) / 10.0);
 	for (int i = -90; i < 90; i += 10)
 	{
 		glBegin(GL_POLYGON);
@@ -766,8 +820,7 @@ void put_icon()
 		glEnd();
 	}
 
-	//glColor3f((rand() % 10) / 10.0, (rand() % 10) / 10.0, (rand() % 10) / 10.0);
-	glColor3f(0.5, 0.0, 0.5);
+	glColor3f((rand() % 10) / 10.0, (rand() % 10) / 10.0, (rand() % 10) / 10.0);
 	for (int i = 0; i < 360; i += 10)
 	{
 		glBegin(GL_POLYGON);
@@ -778,19 +831,130 @@ void put_icon()
 	}
 
 	glPopMatrix();
+}
 
+class vec5f
+{
+public:
+	float x, y, z, tx, ty;
+	vec5f()
+	{
+		x = 0; y = 0; z = 0; tx = 0; ty = 0;
+	}
+	vec5f(float _x, float _y, float _z, float _tx=0, float _ty=0)
+	{
+		x = _x; y = _y; z = _z; tx = _tx; ty = _ty;
+	}
+};
+
+class GUI_BUTTON
+{
+private:
+public:
+	vector <vec5f> p;
+	GLuint tex_id;
+	GUI_BUTTON(const vector <vec5f> &_p, GLuint _tex_id)
+	{
+		tex_id = _tex_id;
+		p = _p;
+	}
+	void put()
+	{
+		glColor4f(1, 1, 1, 1);
+		glBegin(GL_POLYGON);
+		for (int i = 0; i < p.size(); i++)
+		{
+			glTexCoord2f(p[i].tx, p[i].ty);
+			glVertex3f(p[i].x, p[i].y, p[i].z);
+		}
+		glEnd();
+	}
+};
+
+class GUI
+{
+private:
+public:
+	vector <GUI_BUTTON> b;
+	void put()
+	{
+		for (int i = 0; i < b.size(); i++)
+			b[i].put();
+	}
+
+};
+
+void process_graph(GRAPH g,queue <vector<int>> &res,mutex &m)
+{
+	m.lock();
+	cout << "proc begin" << endl;
+	res = g.get_cycles_el();
+	cout << "proc end" << endl;
+	m.unlock();
 }
 
 int main()
 {
-	MSG msg;
-	BOOL done = FALSE;
 	OPENGL_WINDOW w;
+	GUI gui[5];
+	int menu = 0;
+
+
+	vector<vec5f> points;
+	points.resize(4);
+	
+	points[0] = vec5f(10, 10, 0);
+	points[2] = vec5f(310, 60, 0);
+	points[1].x = points[2].x; points[1].y = points[0].y; points[1].z = points[2].z;
+	points[3].x = points[0].x; points[3].y = points[2].y; points[3].z = points[0].z;
+	gui[0].b.push_back(GUI_BUTTON(points, 0));
+
+	points[0] = vec5f(10, 70, 0);
+	points[2] = vec5f(310, 120, 0);
+	points[1].x = points[2].x; points[1].y = points[0].y; points[1].z = points[2].z;
+	points[3].x = points[0].x; points[3].y = points[2].y; points[3].z = points[0].z;
+	gui[0].b.push_back(GUI_BUTTON(points, 0));
+
+	points[0] = vec5f(10, 130, 0);
+	points[2] = vec5f(310, 180, 0);
+	points[1].x = points[2].x; points[1].y = points[0].y; points[1].z = points[2].z;
+	points[3].x = points[0].x; points[3].y = points[2].y; points[3].z = points[0].z;
+	gui[0].b.push_back(GUI_BUTTON(points, 0));
+
+
+
+	points[0] = vec5f(10, 10, 0);
+	points[2] = vec5f(310, 60, 0);
+	points[1].x = points[2].x; points[1].y = points[0].y; points[1].z = points[2].z;
+	points[3].x = points[0].x; points[3].y = points[2].y; points[3].z = points[0].z;
+	gui[1].b.push_back(GUI_BUTTON(points, 0));
+
+	points[0] = vec5f(10, 70, 0);
+	points[2] = vec5f(310, 120, 0);
+	points[1].x = points[2].x; points[1].y = points[0].y; points[1].z = points[2].z;
+	points[3].x = points[0].x; points[3].y = points[2].y; points[3].z = points[0].z;
+	gui[1].b.push_back(GUI_BUTTON(points, 0));
+
+
+
+	points[0] = vec5f(10, 10, 0);
+	points[2] = vec5f(310, 60, 0);
+	points[1].x = points[2].x; points[1].y = points[0].y; points[1].z = points[2].z;
+	points[3].x = points[0].x; points[3].y = points[2].y; points[3].z = points[0].z;
+	gui[2].b.push_back(GUI_BUTTON(points, 0));
+
+
+	mutex m;
 
 	w.enable();
+	thread th;
+	queue<vector<int>> res;
 
 	while (1)
 	{
+
+		if (!w.is_enabled())
+			return -1;
 		w.upd();
 
 
@@ -798,9 +962,73 @@ int main()
 		glLoadIdentity();									
 		glClearColor(0,0,0, 0.5f);
 
+
+		glPushMatrix();
+		//glTranslatef(-1, 0, -1);
+		float mult = cos(w.get_angle() / 180 * 3.1415926) / sin(w.get_angle() / 180 * 3.1415926);
+		glTranslatef(-1*(float)w.get_wx() / (float)w.get_wy()*mult, mult, -1);
+		glScalef(2 / (float)w.get_wy()*mult, -2 / (float)w.get_wy()*cos(w.get_angle() / 180 * 3.1415926) / sin(w.get_angle() / 180 * 3.1415926), 1);
+		gui[menu].put();
+		glPopMatrix();
+
+		auto mouse = w.get_mouse();
+
+		int butt = -1;
+
+		for (int i = 0; i < gui[menu].b.size(); i++)
+			if (gui[menu].b[i].p[0].x < mouse.x)
+				if (gui[menu].b[i].p[0].y<mouse.y)
+					if (gui[menu].b[i].p[2].x>mouse.x)
+						if (gui[menu].b[i].p[2].y > mouse.y)
+							butt = i;
+
+		if (butt != -1 && mouse.mdol == 1)
+		{
+			switch (menu)
+			{
+			case 0:
+				switch (butt)
+				{
+				case 0:
+					menu = 1;
+					break;
+				case 1:
+					menu = 2;
+					break;
+				case 2:
+					int i43e = *((char*)0x00);
+					break;
+				}
+				break;
+			case 1:
+				switch (butt)
+				{
+				case 0:
+					break;
+				case 1:
+					menu = 0;
+					break;
+				}
+				break;
+			case 2:
+				switch (butt)
+				{
+				case 0:
+					menu = 0;
+					break;
+				}
+				break;
+			}
+		}
+
+		if (menu == 1)
+		{
+
+		}
+
 		glPushMatrix();
 		glTranslatef(0,0,-4);
-		put_icon();
+		//put_icon();
 		glPopMatrix();
 
 
@@ -808,13 +1036,53 @@ int main()
 		//int rr = rand() % 1000;
 		//cout << rr << endl;
 		//srand(rr);
-		GRAPH a(9);
+		GRAPH a(8);
 
+		/** /
+
+		if (!th.joinable())
+		{
+			th = thread(process_graph, a, ref(res), ref(m));
+		}
+		else
+		{
+			if (m.try_lock())
+			{
+
+				a.put();
+
+				while (!res.empty())
+				{
+					auto &arr = res.front();
+
+					for (int i = 0; i < arr.size(); i++)
+						cout << arr[i];
+					cout << endl;
+					res.pop();
+				}
+
+				th.detach();
+				th = thread(process_graph, a, ref(res), ref(m));
+				m.unlock();
+			}
+		}
+		/**/
+		/*
+		auto res=a.get_cycles_el();
+
+		while (!res.empty())
+		{
+			auto &arr = res.front();
+			
+			for (int i = 0; i < arr.size();i++)
+				cout << arr[i];
+			cout << endl;
+			res.pop();
+		}
 		a.put();
+		*/
 
-		cout<<a.get_cycles_el().data();
-
-		Sleep(1000);
+		//Sleep(1000);
 	}
 }
 
