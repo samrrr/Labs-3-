@@ -24,39 +24,196 @@ using namespace std;
 #pragma intrinsic(__rdtsc)
 
 
+class TREE_STORE_NODE
+{
+private:
+	int val;
+	vector <TREE_STORE_NODE*> q;
+	TREE_STORE_NODE(int _n, int _val) :val(_val)
+	{
+		q.resize(_n);
+		for (int i = 0; i < _n; i++)
+			q[i] = nullptr;
+	}
+	~TREE_STORE_NODE()
+	{
+		for (int i = 0; i < q.size(); i++)
+			delete q[i];
+	}
+	friend class TREE_STORE;
+	friend class TREE_STORE_ITERATOR;
+};
+
+
+class TREE_STORE_ITERATOR
+{
+	struct ITER_N_L
+	{
+		int i;
+		TREE_STORE_NODE *l;
+	};
+private:
+	
+	vector <ITER_N_L> arr;
+	
+	TREE_STORE *t;
+public:
+	TREE_STORE_ITERATOR()
+	{
+		t = nullptr;
+	}
+	TREE_STORE_ITERATOR(const TREE_STORE_ITERATOR &_a)
+	{
+		t = _a.t;
+		arr = _a.arr;
+	}
+	void get_next();
+	friend const TREE_STORE_ITERATOR operator++(TREE_STORE_ITERATOR &_a)
+	{
+		_a.get_next();
+		return _a;
+	}
+	friend const TREE_STORE_ITERATOR operator++(TREE_STORE_ITERATOR &_a, int)
+	{
+		auto b(_a);
+		_a.get_next();
+		return b;
+	}
+};
+
+class TREE_STORE
+{
+private:
+	TREE_STORE_NODE *node;
+	int n;
+public:
+	TREE_STORE(int _n)
+	{
+		node = new TREE_STORE_NODE(n,0);
+		n = _n;
+	}
+	void add_ray(vector<int> _v,int _n)
+	{
+		TREE_STORE_NODE *p=node;
+		int i = 0;
+		do
+		{
+			if (!node->q[_v[i]])
+			{
+				node->q[_v[i]] = new TREE_STORE_NODE(n, 0);
+			}
+			node = node->q[_v[i]];
+		} while (i<_n);
+		node->val = 1;
+	}
+	~TREE_STORE()
+	{
+		delete node;
+	}
+	friend class TREE_STORE_ITERATOR;
+};
+
+
+void TREE_STORE_ITERATOR::get_next()
+{
+	int k = arr.size();
+
+	if (k == 0)
+	{
+		throw "OUT OF TREE RAY";
+	}
+	k--;
+	auto l = arr[k].l->q[arr[k].i];
+	bool b = 0;
+	int j = 0;
+	for (int i = 0; i < t->n; i++)
+		if (l->q[i])
+		{
+			j = i;
+			i = t->n;
+			b = 1;
+		}
+
+	if (b == 1)
+	{
+		arr.resize(k + 1);
+	}
+
+	if (k > 0)
+	{
+		do
+		{
+			k--;
+			do
+			{
+				arr[k].i++;
+			} while (arr[k].i < t->n && arr[k].l->q[arr[k].i] == nullptr);
+		} while (k > 0 && arr[k].i >= t->n);
+	}
+	else
+	{
+		throw "out of TREE_STORE_ITERATOR";
+	}
+	
+	if (k == 0 && arr[k].i == t->n)
+	{
+		k = -1;
+	}
+	else
+	{
+		int end = 0;
+		do
+		{
+			auto l = l[k];
+			if (used[gr.a[vertex_ray[k]][i]] == 0 && gr.a[vertex_ray[k]][i] <= vertex_ray[0])
+			{
+				d = i;
+				i = a.size();
+			}
+
+		} while (!end);
+	}
+
+
+
+
+	
+}
+
 
 class GRAPH
 {
-	int n;
-	int **a;
+	vector<vector<int>> a;
 public:
 	GRAPH(int _n);
 	GRAPH(const GRAPH &_a);
 	GRAPH operator =(const GRAPH &_a);
 	void put();
-	int getN(){ return n; }
-	int* operator[](const int _i);
+	int getN(){ return a.size(); }
+	vector<int> operator[](const int _i);
 	queue <vector<int>> get_cycles_el();
 	void remove_point(int);
 };
 
 void GRAPH::remove_point(int _i)
 {
-	if (_i < 0 || _i >= n)
+	if (_i < 0 || _i >= a.size())
 		return;
 
-	delete[] a[_i];
-
-	a[_i] = a[n - 1];
+	a[_i] = a[a.size() - 1];
 	
-	n--;
+	a.resize(a.size()-1);
 	
-	for (int i = 0; i < n-1;i++)
+	for (int i = 0; i < a.size(); i++)
 	{
-		int offs=0;
-		for (int r = 1; r < a[i][0]; i++)
+		int offs = 0;
+		for (int r = 0; r < a[i].size(); i++)
 		{
-			if (a[i][r]==_i)
+			if (a[i][r] == a.size())
+			{
+				a[i][r - offs] = _i;
+			}
+			if (a[i][r] == _i)
 			{
 				offs++;
 			}
@@ -65,105 +222,53 @@ void GRAPH::remove_point(int _i)
 		}
 		if (offs > 0)
 		{
-			a[i][0] -= offs;
-
-			int *arr;
-
-			arr = new int[a[i][0]];
-
-			for (int r = 1; r < a[i][0]; i++)
-			{
-				arr[r] = a[i][r];
-			}
-			delete[] a[i];
-			a[i] = arr;
+			a[i].resize(a[i].size() - offs);
 		}
 	}
 
-	int **l_a;
-	l_a = new int*[n - 1];
-	for (int i = 0; i < n - 1; i++)
-		l_a[i] = a[i];
-
-	n--;
-	delete []a;
-	a = l_a;
-
 }
 
-int* GRAPH::operator[](const int _i)
+vector<int> GRAPH::operator[](const int _i)
 {
-	if (_i < 0 || _i >= n)
-		return NULL;
+	if (_i < 0 || _i >= a.size())
+		return a[0];
 	return a[_i];
-}
-
-GRAPH GRAPH::operator = (const GRAPH &_a)
-{
-	if (this == &_a)
-		return *this;
-
-	for (int i = 0; i < n; i++)
-		delete[] a[i];
-	delete[] a;
-
-	n = _a.n;
-
-	a = new int*[n];
-	for (int i = 0; i < n; i++)
-		a[i] = new int[_a.a[i][0]];
-
-	for (int i = 0; i < n; i++)
-		for (int r = 0; r < _a.a[i][0]; r++)
-			a[i][r] = _a.a[i][r];
-
-	return *this;
 }
 
 GRAPH::GRAPH(int _n = 0)
 {
 	if (_n <= 0 || _n > 2048)
 	{
-		n = 0;
 		return;
 	}
-	n = _n;
-	a = new int*[n];
+	a.resize(_n);
 
-	int *arr;
+	vector<int> arr;
 
-	arr = new int[n];
+	arr.resize(_n);
 
-	for (int i = 0; i < n; i++)
+	for (int i = 0; i < a.size(); i++)
 	{
 		int o = 0;
-		for (int r = 0; r < n; r++)
-			if (rand() % 6 < 10)
+		for (int r = 0; r < a.size(); r++)
+			if (rand() % 15 < 1)
 			{
 				arr[o] = r;
 				o++;
 			}
 
-		a[i] = new int[o + 1];
-		a[i][0] = o + 1;
+		a[i].resize(o);
 
 		for (int r = 0; r < o; r++)
 		{
-			a[i][r + 1] = arr[r];
+			a[i][r] = arr[r];
 		}
 	}
-	delete []arr;
 }
 
 GRAPH::GRAPH(const GRAPH &_a)
 {
-	n = _a.n;
-	a = new int*[n];
-	for (int i = 0; i < n; i++)
-		a[i] = new int[_a.a[i][0]];
-	for (int i = 0; i < n; i++)
-		for (int r = 0; r < _a.a[i][0]; r++)
-			a[i][r] = _a.a[i][r];
+	a=_a.a;
 }
 
 void GRAPH::put()
@@ -177,10 +282,10 @@ void GRAPH::put()
 
 	cout << endl;
 
-	for (int i = 0; i < n; i++)
+	for (int i = 0; i < a.size(); i++)
 	{
 		printf("%3i| ", i);
-		for (int r = 1; r < a[i][0]; r++)
+		for (int r = 0; r < a[i].size(); r++)
 			printf("%i  ", (int)a[i][r]);
 		cout << endl;
 	}
@@ -198,9 +303,9 @@ queue <vector<int>> GRAPH::get_cycles_el()
 	
 	//grdel
 
-	used.resize(n + 3);
-	vertex_ray.resize(n + 3);
-	id_ray.resize(n + 3);
+	used.resize(a.size() + 3);
+	vertex_ray.resize(a.size() + 3);
+	id_ray.resize(a.size() + 3);
 
 	bool b = 1;
 
@@ -220,15 +325,22 @@ queue <vector<int>> GRAPH::get_cycles_el()
 		do
 		{
 			k--;
-			used[vertex_ray[k]] = 0;
-			do
+			if (k > 0)
+			{
+				used[vertex_ray[k]] = 0;
+				vector<int> &v_l = gr.a[vertex_ray[k - 1]];
+				do
+				{
+					id_ray[k]++;
+
+				} while (id_ray[k] < v_l.size() && v_l[id_ray[k]] <= vertex_ray[0] && used[v_l[id_ray[k]]] == 1);
+			}
+			else
 			{
 				id_ray[k]++;
+			}
 
-			} while (k > 0 && id_ray[k] < gr.a[vertex_ray[k - 1]][0] && gr.a[vertex_ray[k - 1]][id_ray[k]] <= vertex_ray[0] && used[gr.a[vertex_ray[k - 1]][id_ray[k]]] == 1);
-
-
-		} while (k > 0 && !(gr.a[vertex_ray[k - 1]][id_ray[k]] <= vertex_ray[0] && id_ray[k] < gr.a[vertex_ray[k - 1]][0]));
+		} while (k > 0 && !(id_ray[k] < gr.a[vertex_ray[k - 1]].size() && gr.a[vertex_ray[k - 1]][id_ray[k]] <= vertex_ray[0] && id_ray[k] < gr.a[vertex_ray[k - 1]].size()));
 
 		if (k > 0)
 		{
@@ -239,7 +351,7 @@ queue <vector<int>> GRAPH::get_cycles_el()
 			vertex_ray[0] = id_ray[0];
 		
 
-		if (vertex_ray[0] != n)
+		if (vertex_ray[0] != a.size())
 		{
 			if (vertex_ray[0] != vertex_ray[k] || k == 0)
 			{
@@ -247,11 +359,11 @@ queue <vector<int>> GRAPH::get_cycles_el()
 				do
 				{
 					int d = -1;
-					for (int i = 1; i < gr.a[vertex_ray[k]][0]; i++)
+					for (int i = 0; i < gr.a[vertex_ray[k]].size(); i++)
 						if (used[gr.a[vertex_ray[k]][i]] == 0 && gr.a[vertex_ray[k]][i] <= vertex_ray[0])
 						{
 							d = i;
-							i = n;
+							i = a.size();
 						}
 
 
@@ -281,9 +393,10 @@ queue <vector<int>> GRAPH::get_cycles_el()
 			{
 				vector <int> vec;
 				vec.resize(k+1);
-				for (int gr = 0; gr<=k; gr++)
-					vec[gr] = vertex_ray[gr];
+				for (int gr3 = 0; gr3<=k; gr3++)
+					vec[gr3] = vertex_ray[gr3];
 				res.push(vec);
+				
 			}
 			
 			/** /
@@ -887,9 +1000,9 @@ public:
 void process_graph(GRAPH g,queue <vector<int>> &res,mutex &m)
 {
 	m.lock();
-	cout << "proc begin" << endl;
+	//cout << "proc begin" << endl;
 	res = g.get_cycles_el();
-	cout << "proc end" << endl;
+	//cout << "proc end" << endl;
 	m.unlock();
 }
 
@@ -1036,7 +1149,23 @@ int main()
 		//int rr = rand() % 1000;
 		//cout << rr << endl;
 		//srand(rr);
-		GRAPH a(8);
+		GRAPH a(30);
+		a.put();
+		process_graph(a, ref(res), ref(m));
+		cerr << "hh";
+		while (!res.empty())
+		{
+			auto r=res.front();
+
+			for (int i = 0; i < r.size(); i++)
+			{
+				cout << r[i] << " ";
+			}
+			
+			res.pop();
+
+			cout << endl;
+		}
 
 		/** /
 
