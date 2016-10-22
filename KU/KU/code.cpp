@@ -53,9 +53,9 @@ class TREE_STORE_ITERATOR
 		TREE_STORE_NODE *l;
 	};
 private:
-	
+
 	vector <ITER_N_L> arr;
-	
+
 	TREE_STORE *t;
 public:
 	TREE_STORE_ITERATOR()
@@ -79,6 +79,30 @@ public:
 		_a.get_next();
 		return b;
 	}
+	vector<int> operator *()
+	{
+		vector<int> q;
+		q.resize(arr.size());
+		for (int i = 0; i < arr.size(); i++)
+			q[i] = arr[i].i;
+		return q;
+	}
+	friend bool operator ==(const TREE_STORE_ITERATOR &_a, const TREE_STORE_ITERATOR &_b)
+	{
+		if (_a.arr.size() != _b.arr.size())
+			return 0;
+		if (_a.t != _b.t)
+			return 0;
+		for (int i = 0; i < _a.arr.size(); i++)
+			if (_a.arr[i].i != _b.arr[i].i)
+				return 0;
+		return 1;
+	}
+	friend bool operator !=(const TREE_STORE_ITERATOR &_a, const TREE_STORE_ITERATOR &_b)
+	{
+		return !(_a == _b);
+	}
+	friend class TREE_STORE;
 };
 
 class TREE_STORE
@@ -89,26 +113,45 @@ private:
 public:
 	TREE_STORE(int _n)
 	{
-		node = new TREE_STORE_NODE(n,0);
+		node = new TREE_STORE_NODE(_n,0);
 		n = _n;
 	}
-	void add_ray(vector<int> _v,int _n)
+	void add_ray(vector<int> _v)
 	{
 		TREE_STORE_NODE *p=node;
 		int i = 0;
-		do
+		while (i<_v.size())
 		{
-			if (!node->q[_v[i]])
+			if (!p->q[_v[i]])
 			{
-				node->q[_v[i]] = new TREE_STORE_NODE(n, 0);
+				p->q[_v[i]] = new TREE_STORE_NODE(n, 0);
 			}
-			node = node->q[_v[i]];
-		} while (i<_n);
-		node->val = 1;
+			p = p->q[_v[i]];
+			i++;
+		} 
+		p->val = 1;
 	}
 	~TREE_STORE()
 	{
 		delete node;
+	}
+	TREE_STORE_ITERATOR begin()
+	{
+		TREE_STORE_ITERATOR i;
+		i.arr.resize(1);
+		i.arr[0].i = 0;
+		i.arr[0].l = node;
+		i.t = this;
+		if (node->q[0]->val == 0)
+			i.get_next();
+		return i;
+	}
+	TREE_STORE_ITERATOR end()
+	{
+		TREE_STORE_ITERATOR i;
+		i.arr.resize(0);
+		i.t = this;
+		return i;
 	}
 	friend class TREE_STORE_ITERATOR;
 };
@@ -116,65 +159,105 @@ public:
 
 void TREE_STORE_ITERATOR::get_next()
 {
-	int k = arr.size();
-
-	if (k == 0)
-	{
-		throw "OUT OF TREE RAY";
-	}
-	k--;
-	auto l = arr[k].l->q[arr[k].i];
 	bool b = 0;
-	int j = 0;
-	for (int i = 0; i < t->n; i++)
-		if (l->q[i])
+	bool end = 0;
+
+	do
+	{
+		int k = arr.size();
+
+		if (k == 0)
 		{
-			j = i;
-			i = t->n;
-			b = 1;
+			throw 12345;
 		}
-
-	if (b == 1)
-	{
-		arr.resize(k + 1);
-	}
-
-	if (k > 0)
-	{
-		do
-		{
-			k--;
-			do
+		k--;
+		auto l = arr[k].l->q[arr[k].i];
+		b = 0;
+		int j = 0;
+		for (int i = 0; i < t->n; i++)
+			if (l->q[i])
 			{
-				arr[k].i++;
-			} while (arr[k].i < t->n && arr[k].l->q[arr[k].i] == nullptr);
-		} while (k > 0 && arr[k].i >= t->n);
-	}
-	else
-	{
-		throw "out of TREE_STORE_ITERATOR";
-	}
-	
-	if (k == 0 && arr[k].i == t->n)
-	{
-		k = -1;
-	}
-	else
-	{
-		int end = 0;
-		do
-		{
-			auto l = l[k];
-			if (used[gr.a[vertex_ray[k]][i]] == 0 && gr.a[vertex_ray[k]][i] <= vertex_ray[0])
-			{
-				d = i;
-				i = a.size();
+				j = i;
+				i = t->n;
+				b = 1;
 			}
 
-		} while (!end);
+		if (b == 1)
+		{
+			arr.resize(k + 2);
+			k++;
+			arr[k].i = j;
+			arr[k].l = l;
+			if (l->q[j]->val == 1)
+			{
+				end = 1;
+				b = 0;
+			}
+		}
+	} while (b == 1);
+	if (!end)
+	{
+		int k = arr.size();
+
+		if (k > 0)
+		{
+			do
+			{
+				arr.resize(k);
+				k--;
+				do
+				{
+					arr[k].i++;
+				} while (arr[k].i < t->n && arr[k].l->q[arr[k].i] == nullptr);
+			} while (k > 0 && arr[k].i >= t->n);
+		}
+		else
+		{
+			throw "out of TREE_STORE_ITERATOR";
+		}
+
+		if (k == 0 && arr[k].i == t->n)
+		{
+			arr.resize(0);
+		}
+		else
+			if (arr[k].l->q[arr[k].i]->val == 0)
+			{
+
+				k = arr.size();
+
+				if (k == 0)
+				{
+					throw "OUT OF TREE RAY";
+				}
+				k--;
+				auto l = arr[k].l->q[arr[k].i];
+				b = 0;
+				int j = 0;
+				for (int i = 0; i < t->n; i++)
+					if (l->q[i])
+					{
+						j = i;
+						i = t->n;
+						b = 1;
+					}
+
+				if (b == 1)
+				{
+					arr.resize(k + 2);
+					k++;
+					arr[k].i = j;
+					arr[k].l = l;
+					if (l->q[j]->val == 1)
+					{
+						end = 1;
+						b = 0;
+					}
+				}
+
+			}
+
 	}
-
-
 
 
 	
@@ -1016,6 +1099,28 @@ int main()
 	vector<vec5f> points;
 	points.resize(4);
 	
+	TREE_STORE sto(3);
+
+	sto.add_ray({ 2, 1 });
+	sto.add_ray({ 1 });
+	sto.add_ray({ 1, 2 });
+	sto.add_ray({ 0, 2 });
+	sto.add_ray({ 0, 1, 2 });
+	sto.add_ray({ 0, 1, 1 });
+
+	auto iter=sto.begin();
+	while (iter != sto.end())
+	{
+		auto ray = *iter;
+
+		for (int i = 0; i < ray.size(); i++)
+		{
+			cout << ray[i] << " ";
+		}
+		cout << endl;
+		iter.get_next();
+	}
+
 	points[0] = vec5f(10, 10, 0);
 	points[2] = vec5f(310, 60, 0);
 	points[1].x = points[2].x; points[1].y = points[0].y; points[1].z = points[2].z;
