@@ -1,7 +1,7 @@
 #include <windows.h>
 #include <gl\gl.h>
 #include <gl\glu.h>
-//#include <gl\glaux.h>
+
 
 #include <conio.h>
 #include <time.h>
@@ -15,7 +15,6 @@
 
 #pragma comment(lib, "opengl32.lib")
 #pragma comment(lib, "glu32.lib")
-//#pragma comment(lib, "glaux.lib")
 
 const int SIZE_X_DECREATE = 10;
 const int SIZE_Y_DECREATE = 80;
@@ -29,6 +28,18 @@ class TREE_STORE_NODE
 private:
 	int val;
 	vector <TREE_STORE_NODE*> q;
+	TREE_STORE_NODE(TREE_STORE_NODE* _n)
+	{
+		val = _n->val;
+		q.resize(_n->q.size());
+		for (int i = 0; i < q.size(); i++)
+		{
+			if (_n->q[i] == nullptr)
+				q[i] = nullptr;
+			else
+				q[i] = new TREE_STORE_NODE(_n->q[i]);
+		}
+	}
 	TREE_STORE_NODE(int _n, int _val) :val(_val)
 	{
 		q.resize(_n);
@@ -38,7 +49,8 @@ private:
 	~TREE_STORE_NODE()
 	{
 		for (int i = 0; i < q.size(); i++)
-			delete q[i];
+			if (q[i])
+				delete q[i];
 	}
 	friend class TREE_STORE;
 	friend class TREE_STORE_ITERATOR;
@@ -138,12 +150,26 @@ public:
 	TREE_STORE_ITERATOR begin()
 	{
 		TREE_STORE_ITERATOR i;
-		i.arr.resize(1);
-		i.arr[0].i = 0;
-		i.arr[0].l = node;
-		i.t = this;
-		if (node->q[0]->val == 0)
-			i.get_next();
+		int o = -1;
+		for (int r = 0; r < n; r++)
+			if (node->q[r] != nullptr)
+			{
+				o = r;
+				r = n;
+			}
+		if (o != -1)
+		{
+			i.arr.resize(1);
+			i.arr[0].i = o;
+			i.arr[0].l = node;
+			i.t = this;
+			if (node->q[i.arr[0].i]->val == 0)
+				i.get_next();
+		}
+		else
+		{
+			i = this->end();
+		}
 		return i;
 	}
 	TREE_STORE_ITERATOR end()
@@ -152,6 +178,19 @@ public:
 		i.arr.resize(0);
 		i.t = this;
 		return i;
+	}
+	TREE_STORE (const TREE_STORE &_a)
+	{
+		node = new TREE_STORE_NODE(_a.node);
+		n = _a.n;
+	}
+	TREE_STORE &operator =(const TREE_STORE &_a)
+	{
+		delete node;
+		node = new TREE_STORE_NODE(_a.node);
+		n = _a.n;
+
+		return *this;
 	}
 	friend class TREE_STORE_ITERATOR;
 };
@@ -221,7 +260,7 @@ void TREE_STORE_ITERATOR::get_next()
 			arr.resize(0);
 		}
 		else
-			if (arr[k].l->q[arr[k].i]->val == 0)
+			while (arr[k].l->q[arr[k].i]->val == 0)
 			{
 
 				k = arr.size();
@@ -274,9 +313,14 @@ public:
 	void put();
 	int getN(){ return a.size(); }
 	vector<int> operator[](const int _i);
-	queue <vector<int>> get_cycles_el();
+	TREE_STORE get_cycles_el();
 	void remove_point(int);
 };
+
+int compare(const void *_a, const void *_b)
+{
+	return (*(int*)_a - *(int*)_b);
+}
 
 void GRAPH::remove_point(int _i)
 {
@@ -284,29 +328,40 @@ void GRAPH::remove_point(int _i)
 		return;
 
 	a[_i] = a[a.size() - 1];
-	
+
 	a.resize(a.size()-1);
 	
 	for (int i = 0; i < a.size(); i++)
 	{
 		int offs = 0;
-		for (int r = 0; r < a[i].size(); i++)
+
+		for (int r = 0; r < a[i].size(); r++)
 		{
-			if (a[i][r] == a.size())
-			{
-				a[i][r - offs] = _i;
-			}
 			if (a[i][r] == _i)
 			{
 				offs++;
 			}
 			else
-				a[i][r-offs] = a[i][r];
+			{
+				if (a[i][r] == a.size())
+				{
+					a[i][r - offs] = _i;
+				}
+				else
+				{
+					a[i][r - offs] = a[i][r];
+				}
+			}
 		}
+
 		if (offs > 0)
 		{
 			a[i].resize(a[i].size() - offs);
 		}
+
+		if (a[i].size()>0)
+			qsort(&a[i][0], a[i].size(), sizeof(int), compare);
+		 
 	}
 
 }
@@ -374,21 +429,56 @@ void GRAPH::put()
 	}
 }
 
-queue <vector<int>> GRAPH::get_cycles_el()
+TREE_STORE GRAPH::get_cycles_el()
 {
-	queue <vector<int>> res;
+	TREE_STORE res(a.size());
 
 	vector <int> used;
 	vector <int> vertex_ray;
 	vector <int> id_ray;
 
-	GRAPH gr = *this;
+	GRAPH gr=*this;
 	
-	//grdel
+	vector <int> otobr;
+	otobr.resize(a.size());
+	for (int i = 0; i < a.size(); i++)
+	{
+		otobr[i] = i;
+	}
+	int is_del;
+	do
+	{
+		is_del = 0;
+		for (int i = gr.a.size() - 1; i >= 0; i--)
+		{
+			int b = 0;
+			if (gr.a[i].size() != 0)
+				b = 1;
+			for (int r = 0; r < gr.a.size() && b == 1; r++)
+				for (int o = 0; o < gr.a[r].size(); o++)
+					if (gr.a[r][o] == i)
+						b = 2;
 
-	used.resize(a.size() + 3);
-	vertex_ray.resize(a.size() + 3);
-	id_ray.resize(a.size() + 3);
+			if (b < 2)
+			{
+				otobr[i] = otobr[gr.a.size() - 1];
+				gr.remove_point(i);
+				is_del = 1;
+			}
+		}
+	} while (is_del);
+	
+
+	cout << "new gr:"<<endl;
+	gr.put();
+	
+	if (gr.a.size() == 0)
+		return res;
+
+	used.resize(gr.a.size() + 3);
+	used.resize(gr.a.size() + 3);
+	vertex_ray.resize(gr.a.size() + 3);
+	id_ray.resize(gr.a.size() + 3);
 
 	bool b = 1;
 
@@ -434,7 +524,7 @@ queue <vector<int>> GRAPH::get_cycles_el()
 			vertex_ray[0] = id_ray[0];
 		
 
-		if (vertex_ray[0] != a.size())
+		if (vertex_ray[0] != gr.a.size())
 		{
 			if (vertex_ray[0] != vertex_ray[k] || k == 0)
 			{
@@ -446,7 +536,7 @@ queue <vector<int>> GRAPH::get_cycles_el()
 						if (used[gr.a[vertex_ray[k]][i]] == 0 && gr.a[vertex_ray[k]][i] <= vertex_ray[0])
 						{
 							d = i;
-							i = a.size();
+							i = gr.a.size();
 						}
 
 
@@ -477,19 +567,13 @@ queue <vector<int>> GRAPH::get_cycles_el()
 				vector <int> vec;
 				vec.resize(k+1);
 				for (int gr3 = 0; gr3<=k; gr3++)
-					vec[gr3] = vertex_ray[gr3];
-				res.push(vec);
-				
+					vec[gr3] = otobr[vertex_ray[gr3]];
+
+				res.add_ray(vec);
+
+
 			}
 			
-			/** /
-			if (rand() % 1000 == 0)
-			{
-				for (int gr = 0; gr <= k; gr++)
-					cout << (char)(vertex_ray[gr] + '0');
-				cout << endl;
-			}
-			/**/
 
 		}
 		else
@@ -502,11 +586,156 @@ queue <vector<int>> GRAPH::get_cycles_el()
 	return res;
 }
 
+
 struct W_MOUSE
 {
 	int x, y;
 	int mchl, mchr, mdol, mdor;
 };
+
+typedef struct													// Create A Structure
+{
+	GLubyte	*imageData;											// Image Data (Up To 32 Bits)
+	GLuint	bpp;												// Image Color Depth In Bits Per Pixel.
+	GLuint	x;													// Image Width
+	GLuint	y;													// Image Height
+	GLuint	texID;												// Texture ID Used To Select A Texture
+} TextureImage;													// Structure Name
+
+bool LoadTGA(TextureImage *texture, char *filename, int fff=GL_LINEAR/*GL_NEAREST*/)				// Loads A TGA File Into Memory
+{
+	GLubyte		TGAheader[12] = { 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0 };		// Uncompressed TGA Header
+	GLubyte		TGAcompare[12];									// Used To Compare TGA Header
+	GLubyte		header[6];										// First 6 Useful Bytes From The Header
+	GLuint		bytesPerPixel;									// Holds Number Of Bytes Per Pixel Used In The TGA File
+	GLuint		imageSize;										// Used To Store The Image Size When Setting Aside Ram
+	GLuint		temp;											// Temporary Variable
+	GLuint		type = GL_RGBA;									// Set The Default GL Mode To RBGA (32 BPP)
+
+	glEnable(GL_TEXTURE_2D);
+
+	FILE *file = fopen(filename, "rb");							// Open The TGA File
+
+	if (file == NULL ||											// Does File Even Exist?
+		fread(TGAcompare, 1, sizeof(TGAcompare), file) != sizeof(TGAcompare) ||	// Are There 12 Bytes To Read?
+		memcmp(TGAheader, TGAcompare, sizeof(TGAheader)) != 0 ||	// Does The Header Match What We Want?
+		fread(header, 1, sizeof(header), file) != sizeof(header))				// If So Read Next 6 Header Bytes
+	{
+		if (file == NULL)										// Did The File Even Exist? *Added Jim Strong*
+			return FALSE;										// Return False
+		else													// Otherwise
+		{
+			fclose(file);										// If Anything Failed, Close The File
+			return FALSE;										// Return False
+		}
+	}
+
+	texture->x = header[1] * 256 + header[0];				// Determine The TGA x	(highbyte*256+lowbyte)
+	texture->y = header[3] * 256 + header[2];				// Determine The TGA y	(highbyte*256+lowbyte)
+
+	if (texture->x <= 0 ||									// Is The x Less Than Or Equal To Zero
+		texture->y <= 0 ||									// Is The y Less Than Or Equal To Zero
+		(header[4] != 24 && header[4] != 32))						// Is The TGA 24 or 32 Bit?
+	{
+		fclose(file);											// If Anything Failed, Close The File
+		return FALSE;											// Return False
+	}
+
+	texture->bpp = header[4];								// Grab The TGA's Bits Per Pixel (24 or 32)
+	bytesPerPixel = texture->bpp / 8;							// Divide By 8 To Get The Bytes Per Pixel
+	imageSize = (texture->x)*(texture->y)*bytesPerPixel;	// Calculate The Memory Required For The TGA Data
+	//imageSize	=128*128*128;	
+	texture->imageData = (GLubyte *)malloc(imageSize);			// Reserve Memory To Hold The TGA Data
+
+	if (texture->imageData == NULL ||								// Does The Storage Memory Exist?
+		fread(texture->imageData, 1, imageSize, file) != imageSize)	// Does The Image Size Match The Memory Reserved?
+	{
+		if (texture->imageData != NULL)							// Was Image Data Loaded
+			free(texture->imageData);							// If So, Release The Image Data
+
+		fclose(file);											// Close The File
+		return FALSE;											// Return False
+	}
+
+	for (GLuint i = 0; i<int(imageSize); i += bytesPerPixel)			// Loop Through The Image Data
+	{															// Swaps The 1st And 3rd Bytes ('R'ed and 'B'lue)
+		temp = texture->imageData[i];								// Temporarily Store The Value At Image Data 'i'
+		texture->imageData[i] = texture->imageData[i + 2];		// Set The 1st Byte To The Value Of The 3rd Byte
+		texture->imageData[i + 2] = temp;						// Set The 3rd Byte To The Value In 'temp' (1st Byte Value)
+	}
+
+	fclose(file);												// Close The File
+
+	// Build A Texture From The Data
+	glGenTextures(1, &texture[0].texID);						// Generate OpenGL texture IDs
+	fff = GL_LINEAR;
+	glBindTexture(GL_TEXTURE_2D, texture[0].texID);				// Bind Our Texture
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, fff);	// Linear Filtered
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, fff);	// Linear Filtered
+
+	if (texture[0].bpp == 24)										// Was The TGA 24 Bits
+	{
+		type = GL_RGB;											// If So Set The 'type' To GL_RGB
+	}
+
+	glTexImage2D(GL_TEXTURE_2D, 0, type, texture[0].x, texture[0].y, 0, type, GL_UNSIGNED_BYTE, texture[0].imageData);
+
+	return true;												// Texture Building Went Ok, Return True
+}
+
+class GL_PTINT_TEXT
+{
+	GLuint base;
+	TextureImage tex;
+public:
+	~GL_PTINT_TEXT()										// Delete The Font List
+	{
+		free(tex.imageData);
+	}
+
+	void init()									// Build Our Bitmap Font
+	{
+		LoadTGA(&tex, "font.tga");
+	}
+
+
+	void operator ()(const char *fmt, ...)					// Custom GL "Print" Routine
+	{
+		char		text[512];								// Holds Our String
+		va_list		ap;										// Pointer To List Of Arguments
+
+		if (fmt == NULL)									// If There's No Text
+			return;											// Do Nothing
+
+		va_start(ap, fmt);									// Parses The String For Variables
+		vsprintf(text, fmt, ap);							// And Converts Symbols To Actual Numbers
+		va_end(ap);											// Results Are Stored In Text
+
+		int i;
+		char *s;
+		for (s = text,i=0; *s; s++,i++)
+		{
+			int x, y;
+			x = *s % 16;
+			y = *s / 16;
+
+			glBindTexture(GL_TEXTURE_2D, tex.texID);
+			glBegin(GL_POLYGON);
+			glTexCoord2f((0 + x) / 16.0, (0 + y) / 16.0); glVertex3f(0 + i*0.8, 0, 0);
+			glTexCoord2f((0 + x) / 16.0, (1 + y) / 16.0); glVertex3f(0 + i*0.8, -1, 0);
+			glTexCoord2f((1 + x) / 16.0, (1 + y) / 16.0); glVertex3f(1 + i*0.8, -1, 0);
+			glTexCoord2f((1 + x) / 16.0, (0 + y) / 16.0); glVertex3f(1 + i*0.8, 0, 0);
+			glEnd();
+
+		}
+
+
+	}
+};
+
+GL_PTINT_TEXT glPrint;
+
+
 
 class OPENGL_WINDOW
 {
@@ -669,6 +898,12 @@ private:
 		glEnable(GL_DEPTH_TEST);							// Enables Depth Testing
 		glDepthFunc(GL_LEQUAL);								// The Type Of Depth Testing To Do
 		glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);	// Really Nice Perspective Calculations
+
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glEnable(GL_BLEND);
+		glAlphaFunc(GL_GREATER, 0.99f);
+		glDisable(GL_ALPHA_TEST);
+
 		return TRUE;										// Initialization Went OK
 	}
 
@@ -1049,14 +1284,17 @@ private:
 public:
 	vector <vec5f> p;
 	GLuint tex_id;
-	GUI_BUTTON(const vector <vec5f> &_p, GLuint _tex_id)
+	string text;
+	GUI_BUTTON(const vector <vec5f> &_p, GLuint _tex_id,const string &_text)
 	{
+		text = _text;
 		tex_id = _tex_id;
 		p = _p;
 	}
 	void put()
 	{
 		glColor4f(1, 1, 1, 1);
+		glDisable(GL_TEXTURE_2D);
 		glBegin(GL_POLYGON);
 		for (int i = 0; i < p.size(); i++)
 		{
@@ -1064,6 +1302,15 @@ public:
 			glVertex3f(p[i].x, p[i].y, p[i].z);
 		}
 		glEnd();
+
+		glEnable(GL_TEXTURE_2D);
+		glColor4f(0, 0, 0, 1);
+		glPushMatrix();
+		glTranslatef(p[0].x, p[0].y, 0);
+		glScalef((p[2].y - p[0].y), -(p[2].y - p[0].y), 0);
+		glPrint(text.data());
+		glPopMatrix();
+		glDisable(GL_TEXTURE_2D);
 	}
 };
 
@@ -1080,7 +1327,7 @@ public:
 
 };
 
-void process_graph(GRAPH g,queue <vector<int>> &res,mutex &m)
+void process_graph(GRAPH g,TREE_STORE &res,mutex &m)
 {
 	m.lock();
 	//cout << "proc begin" << endl;
@@ -1099,74 +1346,55 @@ int main()
 	vector<vec5f> points;
 	points.resize(4);
 	
-	TREE_STORE sto(3);
-
-	sto.add_ray({ 2, 1 });
-	sto.add_ray({ 1 });
-	sto.add_ray({ 1, 2 });
-	sto.add_ray({ 0, 2 });
-	sto.add_ray({ 0, 1, 2 });
-	sto.add_ray({ 0, 1, 1 });
-
-	auto iter=sto.begin();
-	while (iter != sto.end())
-	{
-		auto ray = *iter;
-
-		for (int i = 0; i < ray.size(); i++)
-		{
-			cout << ray[i] << " ";
-		}
-		cout << endl;
-		iter.get_next();
-	}
 
 	points[0] = vec5f(10, 10, 0);
-	points[2] = vec5f(310, 60, 0);
+	points[2] = vec5f(410, 60, 0);
 	points[1].x = points[2].x; points[1].y = points[0].y; points[1].z = points[2].z;
 	points[3].x = points[0].x; points[3].y = points[2].y; points[3].z = points[0].z;
-	gui[0].b.push_back(GUI_BUTTON(points, 0));
+	gui[0].b.push_back(GUI_BUTTON(points, 0, "Run test"));
 
 	points[0] = vec5f(10, 70, 0);
-	points[2] = vec5f(310, 120, 0);
+	points[2] = vec5f(410, 120, 0);
 	points[1].x = points[2].x; points[1].y = points[0].y; points[1].z = points[2].z;
 	points[3].x = points[0].x; points[3].y = points[2].y; points[3].z = points[0].z;
-	gui[0].b.push_back(GUI_BUTTON(points, 0));
+	gui[0].b.push_back(GUI_BUTTON(points, 0, "About"));
 
 	points[0] = vec5f(10, 130, 0);
-	points[2] = vec5f(310, 180, 0);
+	points[2] = vec5f(410, 180, 0);
 	points[1].x = points[2].x; points[1].y = points[0].y; points[1].z = points[2].z;
 	points[3].x = points[0].x; points[3].y = points[2].y; points[3].z = points[0].z;
-	gui[0].b.push_back(GUI_BUTTON(points, 0));
+	gui[0].b.push_back(GUI_BUTTON(points, 0, "Crash"));
 
 
 
 	points[0] = vec5f(10, 10, 0);
-	points[2] = vec5f(310, 60, 0);
+	points[2] = vec5f(410, 60, 0);
 	points[1].x = points[2].x; points[1].y = points[0].y; points[1].z = points[2].z;
 	points[3].x = points[0].x; points[3].y = points[2].y; points[3].z = points[0].z;
-	gui[1].b.push_back(GUI_BUTTON(points, 0));
+	gui[1].b.push_back(GUI_BUTTON(points, 0, "Gen new"));
 
 	points[0] = vec5f(10, 70, 0);
-	points[2] = vec5f(310, 120, 0);
+	points[2] = vec5f(410, 120, 0);
 	points[1].x = points[2].x; points[1].y = points[0].y; points[1].z = points[2].z;
 	points[3].x = points[0].x; points[3].y = points[2].y; points[3].z = points[0].z;
-	gui[1].b.push_back(GUI_BUTTON(points, 0));
+	gui[1].b.push_back(GUI_BUTTON(points, 0, "Back"));
 
 
 
 	points[0] = vec5f(10, 10, 0);
-	points[2] = vec5f(310, 60, 0);
+	points[2] = vec5f(410, 60, 0);
 	points[1].x = points[2].x; points[1].y = points[0].y; points[1].z = points[2].z;
 	points[3].x = points[0].x; points[3].y = points[2].y; points[3].z = points[0].z;
-	gui[2].b.push_back(GUI_BUTTON(points, 0));
+	gui[2].b.push_back(GUI_BUTTON(points, 0, "Back"));
 
 
 	mutex m;
 
 	w.enable();
+	glPrint.init();
+
 	thread th;
-	queue<vector<int>> res;
+	TREE_STORE res(20);
 
 	while (1)
 	{
@@ -1244,32 +1472,51 @@ int main()
 
 		}
 
+
 		glPushMatrix();
 		glTranslatef(0,0,-4);
 		//put_icon();
+
+		glEnable(GL_TEXTURE_2D);
+
+		glColor4f(0.5, 0.5, 0.5, 1);
+		//glRasterPos2f(-0.45, 0.35);
+
+		/*
+		glDisable(GL_TEXTURE_2D);
+		glColor4f(1, 1, 1, 1);
+		glBegin(GL_POLYGON);
+		glTexCoord2f(0, 0); glVertex3f(0, 0, 0);
+		glTexCoord2f(0, 1); glVertex3f(0, 1, 0);
+		glTexCoord2f(1, 1); glVertex3f(1, 1, 0);
+		glTexCoord2f(1, 0); glVertex3f(1, 0, 0);
+		glEnd();
+		*/
 		glPopMatrix();
+
+
 
 
 		w.draw();
 		//int rr = rand() % 1000;
 		//cout << rr << endl;
 		//srand(rr);
-		GRAPH a(30);
+		GRAPH a(20);
 		a.put();
 		process_graph(a, ref(res), ref(m));
-		cerr << "hh";
-		while (!res.empty())
+
+
+		auto iter = res.begin();
+		while (iter != res.end())
 		{
-			auto r=res.front();
+			auto ray = *iter;
 
-			for (int i = 0; i < r.size(); i++)
+			for (int i = 0; i < ray.size(); i++)
 			{
-				cout << r[i] << " ";
+				cout << ray[i] << " ";
 			}
-			
-			res.pop();
-
 			cout << endl;
+			iter.get_next();
 		}
 
 		/** /
